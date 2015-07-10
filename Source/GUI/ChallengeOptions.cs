@@ -7,7 +7,7 @@ using ColossalFramework;
 
 namespace Challenges.GUI
 {
-	public class ChallengesManagerPanel : MonoBehaviour{
+	public class ChallengeManagerPanel : MonoBehaviour{
 
 		UIOptionPanel m_optionPanel;
 		UIPanel m_modPanel;
