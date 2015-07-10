@@ -39,8 +39,8 @@
     <Compile Include="Source\GUI\UIMainPanel.cs" />
     <Compile Include="Source\ChallengeGoals.cs" />
     <Compile Include="Source\DataCollector.cs" />
-    <Compile Include="Source\GUI\ChallengeOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Source\GUI\ChallengeManagerPanel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="ICities">
