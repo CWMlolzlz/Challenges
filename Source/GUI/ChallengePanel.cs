@@ -10,7 +10,17 @@ namespace Challenges.GUI
 	public class ChallengePanel : UIPanel{
 		public static readonly float WIDTH = 400f;
 		public static readonly float HEAD = 40f;
+		public static readonly float SPACING = 10f;
+		private static readonly float BUTTON_WIDTH = 60f,BUTTON_HEIGHT = 24f,CLOSE_BUTTON_SIZE = 32f;
 		UILabel m_titleLabel;
+		UILabel m_startTimeLabel;
+		UILabel m_endTimeLabel;
+		UIPanel m_forfeitPanel;
+
+		UIButton m_startButton;
+		UIButton m_endButton;
+		UIButton m_closeButton;
+
 		UIDragHandle m_drag;
 		FastList<GoalProgressPanel> goalPanels = new FastList<GoalProgressPanel>();
 		Challenge m_challenge;
@@ -18,88 +28,142 @@ namespace Challenges.GUI
 		{
 			base.Start ();
 			this.width = WIDTH;
-
-
+			this.height = HEAD;
 			this.backgroundSprite = "MenuPanel";
-			//this.color = new Color32(255,0,0,100);
+			this.Hide ();
 
-			isVisible = true;
-			this.canFocus = true;
-			this.isInteractive = true;
-			CreateTitleLabel ();
+			this.relativePosition = new Vector3 (10,GetUIView().fixedHeight - height - 135);
+
+			m_titleLabel = this.AddUIComponent<UILabel> ();
+			m_titleLabel.text = "Challenges";
+			m_titleLabel.textScale = 1.25f;
+			m_titleLabel.size = new Vector2 (WIDTH,HEAD);
+			m_titleLabel.relativePosition = new Vector3(SPACING,SPACING);
 
 			m_drag = this.AddUIComponent<UIDragHandle> ();
-			m_drag.width = this.width - 20f;
+			m_drag.width = this.width;
 			m_drag.height = HEAD;
-			m_drag.relativePosition = Vector3.zero;
+			m_drag.relativePosition = new Vector3(0,0,10);
 			m_drag.target = this;
+
+			m_closeButton = this.AddUIComponent<UIButton> ();
+			m_closeButton.size = new Vector2 (CLOSE_BUTTON_SIZE, CLOSE_BUTTON_SIZE);
+			m_closeButton.normalBgSprite = "buttonclose";
+			m_closeButton.hoveredBgSprite = "buttonclosehover";
+			m_closeButton.pressedBgSprite = "buttonclosepressed"; 
+			m_closeButton.relativePosition = new Vector3 (WIDTH - 3f - m_closeButton.width, 5);
+			Globals.printMessage(m_closeButton.size);
+			m_closeButton.eventClick += (component, eventParam) => {
+				this.Hide ();
+			};
+
+			m_startButton = this.AddUIComponent<UIButton> ();
+			m_startButton.size = new Vector2 (BUTTON_WIDTH,BUTTON_HEIGHT);
+			m_startButton.text = "Start";
+			m_startButton.textScale = 0.875f;
+			m_startButton.normalBgSprite = "ButtonMenu";
+			m_startButton.hoveredBgSprite = "ButtonMenuHovered";
+			m_startButton.pressedBgSprite = "ButtonMenuPressed";
+			m_startButton.disabledBgSprite = "ButtonMenuDisabled";
+			m_startButton.color = Color.green;
+			m_startButton.focusedColor = m_startButton.color;
+			m_startButton.hoveredColor = m_startButton.color;
+			m_startButton.pressedColor = m_startButton.color;
+			m_startButton.relativePosition = m_closeButton.relativePosition + new Vector3 (-BUTTON_WIDTH -SPACING,6f);
+
+			//m_startButton.eventClick += StartChallenge;
+			m_startButton.Disable ();
+			m_startButton.Hide ();
+
+			m_endButton = this.AddUIComponent<UIButton> ();
+			m_endButton.size = m_startButton.size;
+			m_endButton.text = "Forfeit";
+			m_endButton.textScale = 0.875f;
+			m_endButton.normalBgSprite = "ButtonMenu";
+			m_endButton.hoveredBgSprite = "ButtonMenuHovered";
+			m_endButton.pressedBgSprite = "ButtonMenuPressed";
+			m_endButton.disabledBgSprite = "ButtonMenuDisabled";
+			m_endButton.color = new Color32(255,0,0,255);
+			m_endButton.focusedColor = m_endButton.color;
+			m_endButton.hoveredColor = m_endButton.color;
+			m_endButton.pressedColor = m_endButton.color;
+			m_endButton.relativePosition = m_startButton.relativePosition;
+			m_endButton.eventClick += ForfeitChallenge;
+			//m_startButton.disabledColor = Color.gray;
+			//m_endButton.Disable ();
+			//m_endButton.Hide ();
 		}
 
 		public Challenge CurrentChallenge{
-			get{ return m_challenge;}
-			set{  
-				m_challenge = value;
-				IGoal[] goals = m_challenge.Goals;
-				this.height = HEAD + GoalProgressPanel.SPACING + goals.Length * (GoalProgressPanel.HEIGHT+GoalProgressPanel.SPACING);
-				this.relativePosition = new Vector3 (10,GetUIView().fixedHeight - height - 135);
-				for (int pos = 0; pos < goals.Length; pos++) {
-					goalPanels.Add (GoalProgressPanel.CreateProgressPanel (this, pos, goals[pos]));
+			get{ 
+				if (m_challenge.m_started && !m_challenge.m_finished){
+					return m_challenge;
+				} else {
+					return (Challenge)null;
 				}
+			}
+		}
+
+		public void SetCurrentChallenge(Challenge challenge, bool resuming){
+			if (m_challenge != null) {
+				foreach (GoalProgressPanel goalPanel in goalPanels) {
+					GameObject.DestroyImmediate(goalPanel);
+				}
+			}
+			m_challenge = challenge;
+			//populate goal panels
+			IGoal[] goals = m_challenge.Goals;
+			this.height = HEAD + GoalProgressPanel.SPACING + goals.Length * (GoalProgressPanel.HEIGHT+GoalProgressPanel.SPACING);
+
+			for (int pos = 0; pos < goals.Length; pos++) {
+				goalPanels.Add (GoalProgressPanel.CreateProgressPanel (this, pos, goals[pos]));
+			}
+
+			if (resuming) {
 				if (m_challenge.m_finished) {
-					Globals.printMessage("Challenges have finished already");
-				}else if (m_challenge.m_started) { //has started before hand
-					Globals.printMessage("Continuing Challenges");
-					m_challenge.Start (m_challenge.m_mapStart);
-				} else { //first time running challenge
-					Globals.printMessage("Starting Challenges First Time");
-					m_challenge.Start(Data.GetGameDateTime());
+					Globals.printMessage ("Challenges have finished already");
+				} else if (m_challenge.m_started) { //has started before hand
+					Globals.printMessage ("Continuing Challenges");
+					m_challenge.Resume();
+				} else {
+					Globals.printMessage ("Challenge has neither started nor finished and was found in save");
 				}
-				m_challenge.OnChallengeFinished += (ChallengeEventType type) => {
-					switch(type){
-					case(ChallengeEventType.ACED):
-						Globals.printMessage("Aced");
-						break;
-					case(ChallengeEventType.COMPLETED):
-						Globals.printMessage("Completed");
-						break;
-					case(ChallengeEventType.FAILED):
-						Globals.printMessage("Failed");
-						break;
-					case(ChallengeEventType.TOO_LATE):
-						Globals.printMessage("Too Late");
-						break;
-					}
-				};
-
+			} else {
+				Globals.printMessage("Starting Challenges First Time");
+				m_challenge.Start(Data.GetGameDateTime());
 			}
+
+			m_challenge.OnChallengeFinished += (ChallengeEventType type) => {
+				switch(type){
+				case(ChallengeEventType.ACED):
+					Globals.printMessage("Aced");
+					break;
+				case(ChallengeEventType.COMPLETED):
+					Globals.printMessage("Completed");
+					break;
+				case(ChallengeEventType.FAILED):
+					Globals.printMessage("Failed");
+					break;
+				case(ChallengeEventType.TOO_LATE):
+					Globals.printMessage("Too Late");
+					break;
+				}
+			};
+
+			this.Show ();
+
 		}
 
-		private void CreateTitleLabel(){
-			m_titleLabel = this.AddUIComponent<UILabel> ();
-			m_titleLabel.text = "Challenges";
-			m_titleLabel.textScale = 1.4f;
-			m_titleLabel.textAlignment = UIHorizontalAlignment.Center;
-			m_titleLabel.transform.localPosition = Vector3.zero;
-			m_titleLabel.transform.parent = this.transform;
-			m_titleLabel.position = new Vector3((this.width / 2f) - (m_titleLabel.width / 2f), -20f + (m_titleLabel.height / 2f));
-		}
-
-		public void Toggle(){			
-			isVisible = !isVisible;
-			if (isVisible){
-				this.BringToFront();
-				this.Focus ();
-			}
+		private void ForfeitChallenge(UIComponent source, UIMouseEventParameter eventParam){
+			UIDialog forfeitDialog = UIDialog.CreateUIDialog(this.GetUIView(), "Hello", "World", 
+				() => {Globals.printMessage("Accepted");},
+				() => {Globals.printMessage("Declined");},
+				true);
 		}
 
 		public override void Update(){
 			base.Update ();
-
-			if ((Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.RightControl)) && Input.GetKeyDown (KeyCode.C)) {
-				this.Toggle();
-			}
 			m_challenge.UpdateGoals();
-
 		}
 
 	}
@@ -206,4 +270,6 @@ namespace Challenges.GUI
 			}
 		}
 	}
+
+
 }
