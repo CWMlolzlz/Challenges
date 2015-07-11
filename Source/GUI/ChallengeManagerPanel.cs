@@ -7,10 +7,14 @@ using ColossalFramework;
 
 namespace Challenges.GUI
 {
+	/*
 	public class ChallengeManagerPanel : MonoBehaviour{
 
 		UIOptionPanel m_optionPanel;
 		UIPanel m_modPanel;
+
+		
+
 		void Awake()
 		{
 			//DontDestroyOnLoad(this);
@@ -76,11 +80,11 @@ namespace Challenges.GUI
 				m_optionPanel.Show ();
 			}
 		}
-	}
+	}*/
 
-	public class UIOptionPanel : UIPanel{
+	public class ChallengeManagerPanel : UIPanel{
 
-		public static readonly string cacheName = "UIOptionPanel";
+		public static readonly string cacheName = "ChallengeManagerPanel";
 
 		private static readonly float WIDTH = 600f;
 		private static readonly float HEIGHT = 400f;
@@ -92,6 +96,7 @@ namespace Challenges.GUI
 
 		private static readonly float SPACING = 10f;
 
+		ChallengePanel m_challengePanel;
 
 		UIPanel m_challengeDetailsPanel;
 		UILabel m_challengeName;
@@ -109,6 +114,11 @@ namespace Challenges.GUI
 
 		List<Challenge> m_challenges;
 		int m_selectedIndex = -1;
+
+		public ChallengePanel CurrentChallengePanel{
+			get{ return m_challengePanel; }
+		}
+
 		public override void Start ()
 		{
 			base.Start ();
@@ -274,6 +284,10 @@ namespace Challenges.GUI
 				}
 			}
 			return output;
+		}
+
+		private void ShowChallengePanel(Challenge challenge){
+			
 		}
 
 	}
