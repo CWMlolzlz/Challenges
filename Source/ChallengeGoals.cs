@@ -18,7 +18,9 @@ namespace Challenges
 
 	[Serializable()]
 	public class Challenge{
-		
+		[field:NonSerialized]
+		bool m_active = false;
+
 		string m_name;
 		string m_desc;
 		int m_failTolerance;
@@ -32,8 +34,12 @@ namespace Challenges
 		public DateTime m_mapStart;
 		DateTime m_deadline;
 		IGoal[] m_goals;
+
+		int m_failedGoals;
+		int m_passedGoals;
+
 		public int Years{
-			get {return m_years;}
+			get{return m_years;}
 			set{ m_hasDeadline = true;m_years = value;}
 		}
 
@@ -51,9 +57,6 @@ namespace Challenges
 			get { return m_failTolerance;}
 			set { this.m_failTolerance = value;}
 		}
-
-		int m_failedGoals;
-		int m_passedGoals;
 
 		public event ChallengeEvent OnChallengeFinished;
 
@@ -96,10 +99,15 @@ namespace Challenges
 				m_deadline = m_mapStart.AddYears (m_years).AddMonths (m_months);
 			}
 			m_started = true;
+			m_active = true;
+		}
+
+		public void Resume(){
+			m_active = true;
 		}
 
 		public void UpdateGoals(){
-			if (m_started && !m_finished) {
+			if (m_started && !m_finished && m_active) {
 				foreach (IGoal goal in this.m_goals) {
 					goal.Update ();
 				}
