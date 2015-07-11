@@ -33,31 +33,19 @@ namespace Challenges{
 	}
 
 	public class ChallengesMod : LoadingExtensionBase, IUserMod, ISerializableDataExtension{
-		bool loaded = false;
-		public static string XML_LOCATION = "Challenges.xml";
-		ChallengeOptions m_options;
-		GameObject sm_optionsManager;
+		ChallengeManagerPanel m_managerPanel;
 
 		public string Name {
-			get { Init (); return "Challenges"; }
+			get{ return "Challenges"; }
 		}
 
 		public string Description {
 			get { return "Adds some intereseting challenges to complete within Cities Skylines"; }
 		}
 
-		private void Init(){
-			if (!loaded) {
-				Data.loadXML ();
-				if (m_options == null) {
-					sm_optionsManager = new GameObject("OptionsManager");
-					sm_optionsManager.AddComponent<ChallengeOptions>(); 
-				}
-				//loaded = true;
-			}
-		}
+		
 
-		public UIMainPanel m_UIRoot;
+		//public UIMainPanel m_UIRoot;
 		public UIView m_view;
 
 		public readonly string version = "1.0";
@@ -67,6 +55,7 @@ namespace Challenges{
 		/// </summary>
 		public override void OnLevelLoaded(LoadMode mode)
 		{			
+			/*
 			// Is it an actual game ?
 			base.OnLevelLoaded(mode);
 
@@ -83,12 +72,25 @@ namespace Challenges{
 
 				m_UIRoot.CurrentChallenge = Globals.m_loadedChallenge;
 			}
+			*/
+
+			base.OnLevelLoaded(mode);
+			if (mode != LoadMode.LoadGame && mode != LoadMode.NewGame) return;
+			if (m_managerPanel != null) return;
+			//test (-1);
+			Globals.printMessage ("Loaded Game");
+			//LoadChallenge ();
+			//Challenge challenge = LoadChallenge ();
+			if (Globals.m_loadedChallenge != null) {
+				Globals.printMessage ("Loaded Challenge: " + Globals.m_loadedChallenge.Name);
+				m_view = UIView.GetAView();
+				m_managerPanel = (ChallengeManagerPanel)m_view.AddUIComponent(typeof(ChallengeManagerPanel));
+			}
 
 		}
 
-		/*
-		public override void OnCreated (ILoading loading)
-		{
+		/**
+		public override void OnCreated (ILoading loading){
 			base.OnCreated (loading); 
 			//Globals.printMessage ("Created Game");
 			//m_view = UIView.GetAView();
@@ -98,7 +100,7 @@ namespace Challenges{
 			//}
 			//m_UIRoot = (UIMainPanel)m_view.AddUIComponent(typeof(UIMainPanel));
 		}
-		*/
+		**/
 
 		public override void OnLevelUnloading(){
 			Exit();
@@ -109,13 +111,8 @@ namespace Challenges{
 			Exit ();
 		}
 
-		private void test(int state){
-			if (Globals.DEBUG) {
-				Globals.printMessage (state + " : " + (m_view != null ? "UIView" : "null") + " , " + (m_UIRoot != null ? m_UIRoot.GetType ().ToString () : "null"));
-			}
-		}
-
 		private void Exit(){
+			/*
 			Globals.printMessage ("Exiting");
 			if (m_UIRoot != null) {
 				GameObject.DestroyImmediate(m_UIRoot.gameObject);
@@ -123,7 +120,13 @@ namespace Challenges{
 			if (m_options != null) {
 				Globals.printMessage ("Destroying m_options");
 				GameObject.DestroyImmediate (sm_optionsManager.gameObject);
+			*/
+
+			Globals.printMessage ("Exiting");
+			if (m_managerPanel != null) {
+				GameObject.DestroyImmediate(m_managerPanel.gameObject);
 			}
+
 		}	
 
 		ISerializableData serializableData;
@@ -170,13 +173,13 @@ namespace Challenges{
 		public void OnSaveData(){
 			
 			Globals.printMessage ("OnSaveData");
-			if (m_UIRoot != null && m_UIRoot.CurrentChallenge != null) {
+			if (m_managerPanel != null && m_managerPanel.CurrentChallengePanel.CurrentChallenge != null) {
 				Globals.printMessage ("Attempting to save challenge to save file");
 				BinaryFormatter formatter = new BinaryFormatter ();
 				Globals.printMessage ("Formatter");
 				MemoryStream stream = new MemoryStream ();
 				Globals.printMessage ("Memory Stream");
-				formatter.Serialize (stream, m_UIRoot.CurrentChallenge);
+				formatter.Serialize (stream, m_managerPanel.CurrentChallengePanel.CurrentChallenge);
 				Globals.printMessage ("Serialize");
 				byte[] bytes = stream.ToArray ();
 				Globals.printMessage ("ToArray");
