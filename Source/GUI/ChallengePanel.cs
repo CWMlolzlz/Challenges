@@ -7,12 +7,12 @@ using System.Collections.Generic;
 
 namespace Challenges.GUI
 {
-	public class UIMainPanel : UIPanel{
+	public class ChallengePanel : UIPanel{
 		public static readonly float WIDTH = 400f;
 		public static readonly float HEAD = 40f;
 		UILabel m_titleLabel;
 		UIDragHandle m_drag;
-		FastList<UIProgressPanel> goalPanels = new FastList<UIProgressPanel>();
+		FastList<GoalProgressPanel> goalPanels = new FastList<GoalProgressPanel>();
 		Challenge m_challenge;
 		public override void Start()
 		{
@@ -40,10 +40,10 @@ namespace Challenges.GUI
 			set{  
 				m_challenge = value;
 				IGoal[] goals = m_challenge.Goals;
-				this.height = HEAD + UIProgressPanel.SPACING + goals.Length * (UIProgressPanel.HEIGHT+UIProgressPanel.SPACING);
+				this.height = HEAD + GoalProgressPanel.SPACING + goals.Length * (GoalProgressPanel.HEIGHT+GoalProgressPanel.SPACING);
 				this.relativePosition = new Vector3 (10,GetUIView().fixedHeight - height - 135);
 				for (int pos = 0; pos < goals.Length; pos++) {
-					goalPanels.Add (UIProgressPanel.CreateProgressPanel (this, pos, goals[pos]));
+					goalPanels.Add (GoalProgressPanel.CreateProgressPanel (this, pos, goals[pos]));
 				}
 				if (m_challenge.m_finished) {
 					Globals.printMessage("Challenges have finished already");
@@ -104,7 +104,7 @@ namespace Challenges.GUI
 
 	}
 
-	public class UIProgressPanel : UIPanel{
+	public class GoalProgressPanel : UIPanel{
 		public static readonly float SPACING = 10f;
 
 		public static readonly float WIDTH = 380f;
@@ -122,9 +122,9 @@ namespace Challenges.GUI
 
 		private IGoal m_goal; 
 
-		public static UIProgressPanel CreateProgressPanel(UIComponent parent, int pos, IGoal goal){
+		public static GoalProgressPanel CreateProgressPanel(UIComponent parent, int pos, IGoal goal){
 			
-			UIProgressPanel progressPanel = parent.AddUIComponent<UIProgressPanel> ();
+			GoalProgressPanel progressPanel = parent.AddUIComponent<GoalProgressPanel> ();
 			progressPanel.Start ();
 			progressPanel.PopulatePanel (parent, pos, goal);
 			return progressPanel;
@@ -146,7 +146,7 @@ namespace Challenges.GUI
 
 			this.transform.parent = parent.transform;
 			this.transform.localPosition = Vector3.zero;
-			this.relativePosition = new Vector3 (SPACING, UIMainPanel.HEAD + SPACING + pos * (HEIGHT + SPACING));
+			this.relativePosition = new Vector3 (SPACING, ChallengePanel.HEAD + SPACING + pos * (HEIGHT + SPACING));
 
 			//label
 			m_label.text = m_goal.Name;
@@ -206,40 +206,4 @@ namespace Challenges.GUI
 			}
 		}
 	}
-
-	public class UIToggleButton : UIButton{
-
-		private UIMainPanel m_mainPanel;
-
-		public override void Start ()
-		{
-			base.Start();
-			this.text = "Challenges";
-			this.size = new Vector2(100f, 30f);
-			this.textScale = 0.9f;
-			this.Hide();
-
-			this.normalBgSprite = "ButtonMenu";
-			this.hoveredBgSprite = "ButtonMenuHovered";
-			this.pressedBgSprite = "ButtonMenuPressed";
-
-			m_mainPanel = (UIMainPanel)this.GetUIView ().AddUIComponent (typeof(UIMainPanel));
-			m_mainPanel.Hide();
-		}
-
-
-
-		public override void OnDestroy ()
-		{
-			GameObject.DestroyImmediate(m_mainPanel.gameObject);
-			base.OnDestroy ();
-
-		}
-
-		public void TogglePanel(UIComponent component, UIMouseEventParameter param){
-			m_mainPanel.Toggle();
-		}
-
-
-	}
-}
+}
