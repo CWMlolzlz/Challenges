@@ -16,7 +16,7 @@ using Challenges.GUI;
 namespace Challenges{
 
 	public class Globals{
-		public static readonly bool DEBUG = false;
+		public static readonly bool DEBUG = true;
 
 		public static Challenge m_selectedChallenge;
 		public static Challenge m_loadedChallenge;
@@ -81,26 +81,47 @@ namespace Challenges{
 			Globals.printMessage ("Loaded Game");
 			//LoadChallenge ();
 			//Challenge challenge = LoadChallenge ();
-			if (Globals.m_loadedChallenge != null) {
-				Globals.printMessage ("Loaded Challenge: " + Globals.m_loadedChallenge.Name);
-				m_view = UIView.GetAView();
-				m_managerPanel = (ChallengeManagerPanel)m_view.AddUIComponent(typeof(ChallengeManagerPanel));
-			}
+
+			m_view = UIView.GetAView();
+			m_managerPanel = (ChallengeManagerPanel)m_view.AddUIComponent(typeof(ChallengeManagerPanel));
+
 
 		}
 
 		/**
+		 * used to remove old GUI elements during dev cycle
+		 **/
+		private void DestoryOldGUI(){
+			m_view = UIView.GetAView();
+			if (m_view != null) {
+				DestroyOld<ChallengeManagerPanel> ();
+				DestroyOld<ChallengePanel> ();
+				DestroyOld<UIDialog> ();
+			}
+		}
+
+		private void DestroyOld<T>(){
+			int i = 0;
+			while (i < 100) {
+				try {
+					UIComponent comp = m_view.FindUIComponent (typeof(T).Name);
+					if(comp == null){return;}
+					GameObject.DestroyImmediate (comp.gameObject);
+				} catch (Exception) {
+					return;
+				}
+				i++;
+			}
+		}
+
+
 		public override void OnCreated (ILoading loading){
 			base.OnCreated (loading); 
-			//Globals.printMessage ("Created Game");
-			//m_view = UIView.GetAView();
-			//UIComponent find = m_view.FindUIComponent(typeof(UIMainPanel).Name);
-			//if (find != null) {
-			//	GameObject.DestroyImmediate (find.gameObject);
-			//}
-			//m_UIRoot = (UIMainPanel)m_view.AddUIComponent(typeof(UIMainPanel));
+			Globals.printMessage ("Created Game");
+			DestoryOldGUI ();
+			m_managerPanel = (ChallengeManagerPanel)m_view.AddUIComponent(typeof(ChallengeManagerPanel));
 		}
-		**/
+
 
 		public override void OnLevelUnloading(){
 			Exit();
@@ -173,23 +194,27 @@ namespace Challenges{
 		public void OnSaveData(){
 			
 			Globals.printMessage ("OnSaveData");
-			if (m_managerPanel != null && m_managerPanel.CurrentChallengePanel.CurrentChallenge != null) {
-				Globals.printMessage ("Attempting to save challenge to save file");
-				BinaryFormatter formatter = new BinaryFormatter ();
-				Globals.printMessage ("Formatter");
-				MemoryStream stream = new MemoryStream ();
-				Globals.printMessage ("Memory Stream");
-				formatter.Serialize (stream, m_managerPanel.CurrentChallengePanel.CurrentChallenge);
-				Globals.printMessage ("Serialize");
-				byte[] bytes = stream.ToArray ();
-				Globals.printMessage ("ToArray");
-				this.serializableData.SaveData (ID, bytes);
-				Globals.printMessage ("SaveData");
+			try{
+				if (m_managerPanel != null && m_managerPanel.CurrentChallengePanel.CurrentChallenge != null) {
+					Globals.printMessage ("Attempting to save challenge to save file");
+					BinaryFormatter formatter = new BinaryFormatter ();
+					Globals.printMessage ("Formatter");
+					MemoryStream stream = new MemoryStream ();
+					Globals.printMessage ("Memory Stream");
+					formatter.Serialize (stream, m_managerPanel.CurrentChallengePanel.CurrentChallenge);
+					Globals.printMessage ("Serialize");
+					byte[] bytes = stream.ToArray ();
+					Globals.printMessage ("ToArray");
+					this.serializableData.SaveData (ID, bytes);
+					Globals.printMessage ("SaveData");
 
-				Globals.printMessage ("Count: " + bytes.LongCount());
-			} else {
-				Globals.printMessage ("No challenge was loaded so no challenge will be saved");
+					Globals.printMessage ("Count: " + bytes.LongCount());
+				} else {
+					Globals.printMessage ("No challenge was loaded so no challenge will be saved");
 
+				}
+			}catch(Exception e){
+				Globals.printMessage (e.ToString ());
 			}
 		}
 
