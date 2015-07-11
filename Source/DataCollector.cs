@@ -41,7 +41,7 @@ namespace Challenges{
 			return Singleton<SimulationManager>.instance.m_currentGameTime;
 		}
 
-		public static void loadXML(){
+		public static List<Challenge> loadXML(){
 			Globals.printMessage("Load XML()");
 			if (longLocation == null) {				
 				//Globals.printMessage(DataLocation.addonsPath);
@@ -101,12 +101,12 @@ namespace Challenges{
 					list.Add (newChallenge);
 				}
 				m_challengesLoaded = true;
-				m_challenges = list;
+				return list;
 				 
 				Globals.printMessage (list.Count);
 			} else {
 				CreateXML ();
-				loadXML ();
+				return loadXML ();
 			}
 
 		}
