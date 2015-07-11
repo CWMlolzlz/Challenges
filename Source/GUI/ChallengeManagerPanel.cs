@@ -29,7 +29,7 @@ namespace Challenges.GUI
 		UILabel m_challengeBreakdown;
 		UILabel m_challengeDeadline;
 
-		UIListBox m_challengeBrowser;
+		UIListBox m_challengeBrowser; 
 		UIPanel m_challengeListPanel;
 		UIButton m_selectButton;
 
@@ -237,12 +237,15 @@ namespace Challenges.GUI
 			//this.Hide ();
 		}
 
-		private void CycleVisibility(){
-			if (!m_challengePanel.isVisible) {
+		private void CycleVisibility(){ 
+			if (!m_challengePanel.isVisible && m_challengePanel.CurrentChallenge != null) {
+				Globals.printMessage ("1");
 				m_challengePanel.Show ();
 			} else if (!this.isVisible) {
+				Globals.printMessage ("2");
 				this.Show ();
 			} else {
+				Globals.printMessage ("3");
 				this.Hide ();
 				m_challengePanel.Hide ();
 			}

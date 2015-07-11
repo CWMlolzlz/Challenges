@@ -88,7 +88,7 @@ namespace Challenges.GUI
 			m_endButton.hoveredColor = m_endButton.color;
 			m_endButton.pressedColor = m_endButton.color;
 			m_endButton.relativePosition = m_startButton.relativePosition;
-			m_endButton.eventClick += ForfeitChallenge;
+			m_endButton.eventClick += AskForfeit;
 			//m_startButton.disabledColor = Color.gray;
 			//m_endButton.Disable ();
 			//m_endButton.Hide ();
@@ -96,20 +96,17 @@ namespace Challenges.GUI
 
 		public Challenge CurrentChallenge{
 			get{ 
-				if (m_challenge.m_started && !m_challenge.m_finished){
+				//if (m_challenge.m_started && !m_challenge.m_finished){
 					return m_challenge;
-				} else {
-					return (Challenge)null;
-				}
+				//} else {
+				//	return (Challenge)null;
+				//s}
 			}
 		}
 
 		public void SetCurrentChallenge(Challenge challenge, bool resuming){
-			if (m_challenge != null) {
-				foreach (GoalProgressPanel goalPanel in goalPanels) {
-					GameObject.DestroyImmediate(goalPanel);
-				}
-			}
+			DestroyGoals ();
+
 			m_challenge = challenge;
 			//populate goal panels
 			IGoal[] goals = m_challenge.Goals;
@@ -154,11 +151,25 @@ namespace Challenges.GUI
 
 		}
 
-		private void ForfeitChallenge(UIComponent source, UIMouseEventParameter eventParam){
-			UIDialog forfeitDialog = UIDialog.CreateUIDialog(this.GetUIView(), "Hello", "World", 
+		private void AskForfeit(UIComponent source, UIMouseEventParameter eventParam){
+			UIDialog forfeitDialog = UIDialog.CreateUIDialog(this.GetUIView(), "FORFEIT CHALLENGE", "Are you sure you would like to forfeit the challenge?", 
+				() => {Globals.printMessage("Declined");ForfeitChallenge();},
 				() => {Globals.printMessage("Accepted");},
-				() => {Globals.printMessage("Declined");},
 				true);
+		}
+
+		private void ForfeitChallenge(){
+			Globals.printMessage("Forfeiting");
+			DestroyGoals ();
+			m_challenge = null;
+			this.Hide ();
+		}
+
+		private void DestroyGoals(){
+			foreach (GoalProgressPanel goalPanel in goalPanels) {
+				GameObject.DestroyImmediate(goalPanel);
+			}
+
 		}
 
 		public override void Update(){

@@ -1,14 +1,14 @@
 ﻿using UnityEngine;
 using ColossalFramework.UI;
 
-namespace Challenge.GUI
+namespace Challenges.GUI
 {
 	public class UIDialog : UIPanel{
 
-		public static readonly float WIDTH = 500f, HEIGHT = 250f ;
+		public static readonly float WIDTH = 400f, HEIGHT = 220f ;
 		public static readonly float HEAD = 40f;
 		public static readonly float PADDING = 20f;
-		public static readonly float BUTTON_WIDTH = 200f, BUTTON_HEIGHT = 80f;
+		public static readonly float BUTTON_WIDTH = 120f, BUTTON_HEIGHT = 50f;
 
 		UILabel m_details;
 		UILabel m_title;
@@ -24,6 +24,7 @@ namespace Challenge.GUI
 			dialog.Start ();
 
 			dialog.m_title.text = title;
+			dialog.m_title.relativePosition = new Vector3(WIDTH/2 - dialog.m_title.width/2,HEAD/2 - dialog.m_title.height/2);
 			dialog.m_details.text = details;
 
 			dialog.eventAccept += accept;
@@ -45,15 +46,18 @@ namespace Challenge.GUI
 			this.relativePosition = new Vector2 (WIDTH / 2, HEIGHT / 2);
 
 			m_title = this.AddUIComponent<UILabel>();
-			m_title.size = new Vector2(WIDTH,HEAD);
-			m_title.relativePosition = Vector3.zero;
+			m_title.textScale = 1.25f;
+			m_title.textAlignment = UIHorizontalAlignment.Center;
+			m_title.relativePosition = new Vector3(WIDTH/2 - m_title.width/2,HEAD/2 - m_title.height/2);
 
 			m_details = this.AddUIComponent<UILabel>();
-			m_details.size = new Vector2 (WIDTH - PADDING * 2, HEIGHT - HEAD - PADDING * 2);
+			m_details.minimumSize = new Vector2 (WIDTH - PADDING * 2, HEIGHT - HEAD - PADDING * 2);
+			m_details.wordWrap = true;
 			m_details.relativePosition = new Vector3 (PADDING, HEAD + PADDING);
 
 			m_accept = this.AddUIComponent<UIButton> ();
 			m_accept.text = "Yes";
+			m_accept.textScale = 1.5f;
 			m_accept.size = new Vector2 (BUTTON_WIDTH, BUTTON_HEIGHT);
 			m_accept.normalBgSprite = "ButtonMenu";
 			m_accept.hoveredBgSprite = "ButtonMenuHovered";
@@ -64,6 +68,7 @@ namespace Challenge.GUI
 
 			m_decline = this.AddUIComponent<UIButton> ();
 			m_decline.text = "No";
+			m_decline.textScale = 1.5f;
 			m_decline.size = new Vector2 (BUTTON_WIDTH, BUTTON_HEIGHT);
 			m_decline.normalBgSprite = "ButtonMenu";
 			m_decline.hoveredBgSprite = "ButtonMenuHovered";

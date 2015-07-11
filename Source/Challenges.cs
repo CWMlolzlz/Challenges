@@ -9,8 +9,6 @@ using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
 using System.Collections.Generic;
-
-
 using Challenges.GUI;
 
 namespace Challenges{
