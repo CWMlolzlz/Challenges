@@ -99,6 +99,21 @@ namespace Challenges
 			}
 		}
 
+		public void Reset(){
+			m_started = false;
+			m_finished = false;
+			if (m_rewards != null) {
+				foreach (IReward r in m_rewards) {
+					r.Reset ();
+				}
+			}
+			if (m_penalties != null) {
+				foreach (IReward p in m_penalties) {
+					p.Reset ();
+				}
+			}
+		}
+
 		public void Start(DateTime levelStart){
 			m_mapStart = levelStart;
 			if (m_hasDeadline) { //if the challenge has a defined period
@@ -126,8 +141,11 @@ namespace Challenges
 		}
 
 		private void Finish(ChallengeEventType finishType){
-			m_finished = true;
-			OnChallengeFinished (finishType);
+			
+			if (!m_finished) { //prevents multiple finishes triggering
+				m_finished = true;
+				OnChallengeFinished (finishType);
+			}
 		}
 
 		private void HasFinishedChallengesAnytime(){
