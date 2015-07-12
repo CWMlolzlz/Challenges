@@ -105,8 +105,11 @@ namespace Challenges.GUI
 		}
 
 		public void SetCurrentChallenge(Challenge challenge, bool resuming){
-			DestroyGoals ();
-
+			Globals.printMessage("SetCurrentChallenge()");
+			if(m_challenge != null){ //ensures the previous challenge has been removed
+				DestroyChallenge ();
+			}
+			Globals.printMessage("Post DestroyChallenge()");
 			m_challenge = challenge;
 			//populate goal panels
 			IGoal[] goals = m_challenge.Goals;
@@ -133,16 +136,14 @@ namespace Challenges.GUI
 			m_challenge.OnChallengeFinished += (ChallengeEventType type) => {
 				switch(type){
 				case(ChallengeEventType.ACED):
-					Globals.printMessage("Aced");
-					break;
 				case(ChallengeEventType.COMPLETED):
 					Globals.printMessage("Completed");
+					CompleteChallenge(); 
 					break;
 				case(ChallengeEventType.FAILED):
+				case(ChallengeEventType.TOO_LATE):			
 					Globals.printMessage("Failed");
-					break;
-				case(ChallengeEventType.TOO_LATE):
-					Globals.printMessage("Too Late");
+					ForfeitChallenge();
 					break;
 				}
 			};
@@ -153,28 +154,45 @@ namespace Challenges.GUI
 
 		private void AskForfeit(UIComponent source, UIMouseEventParameter eventParam){
 			UIDialog forfeitDialog = UIDialog.CreateUIDialog(this.GetUIView(), "FORFEIT CHALLENGE", "Are you sure you would like to forfeit the challenge?", 
-				() => {Globals.printMessage("Declined");ForfeitChallenge();},
-				() => {Globals.printMessage("Accepted");},
+				() => {ForfeitChallenge();},
+				() => {},
 				true);
+		}
+
+		private void CompleteChallenge(){
+			Globals.printMessage ("Completing");
+			foreach(IReward reward in m_challenge.Rewards){
+				reward.Use();
+			}
+			DestroyChallenge ();
 		}
 
 		private void ForfeitChallenge(){
 			Globals.printMessage("Forfeiting");
-			DestroyGoals ();
-			m_challenge = null;
-			this.Hide ();
+			if (m_challenge.Penalties != null) {
+				foreach (IReward penalty in m_challenge.Penalties) {
+					penalty.Use ();
+				}
+			}
+			DestroyChallenge ();
 		}
 
-		private void DestroyGoals(){
+		private void DestroyChallenge(){
 			foreach (GoalProgressPanel goalPanel in goalPanels) {
 				GameObject.DestroyImmediate(goalPanel);
 			}
-
+			Globals.printMessage ("Finsihed destroying");
+			m_challenge.Reset ();
+			m_challenge = null;
+			this.Hide();
+			Globals.printMessage ("Hidden");
 		}
 
 		public override void Update(){
 			base.Update ();
-			m_challenge.UpdateGoals();
+			if (m_challenge != null) {
+				m_challenge.UpdateGoals ();
+			}
 		}
 
 	}
@@ -283,4 +301,4 @@ namespace Challenges.GUI
 	}
 
 
-}
+}
