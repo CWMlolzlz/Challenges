@@ -34,6 +34,8 @@ namespace Challenges
 		public DateTime m_mapStart;
 		DateTime m_deadline;
 		IGoal[] m_goals;
+		IReward[] m_rewards;
+		IReward[] m_penalties;
 
 		int m_failedGoals;
 		int m_passedGoals;
@@ -60,20 +62,24 @@ namespace Challenges
 
 		public event ChallengeEvent OnChallengeFinished;
 
-		public Challenge(string name, string desc, IGoal[] goals){
+		public Challenge(string name, string desc, IGoal[] goals, IReward[] rewards, IReward[] penalties){
 			this.m_name = name;
 			this.m_desc = desc;
 			this.m_goals = goals;
+			this.m_rewards = rewards;
+			this.m_penalties = penalties;
 			this.m_failTolerance = 0;
 			this.m_passTolerance = -1;
-			AttachEventsToGoals ();
+			AttachEvents();
 		}
 
 		public string Name{ get { return m_name;}}
 		public string Description{get{ return m_desc;}}
 		public IGoal[] Goals{get{ return m_goals;}}
+		public IReward[] Rewards{get{ return m_rewards;}}
+		public IReward[] Penalties{get{ return m_penalties;}}
 
-		public void AttachEventsToGoals(){
+		public void AttachEvents(){
 			for (int i = 0; i < m_goals.Length; i++) {
 				IGoal goal = m_goals [i];
 				goal.OnFailed += () => {
@@ -222,7 +228,7 @@ namespace Challenges
 		float m_failValue;
 		float m_passValue;
 	 	float m_value;
-		public string m_name;
+		public Data.ValueID m_valueID;
 		public GoalType m_goalType;
 		bool m_passOnce = true;
 		bool m_failOnce = true;
@@ -230,8 +236,8 @@ namespace Challenges
 		public bool m_hasPassed = false;
 		public bool m_hasFailed = false;
 
-		public NumericalGoal(string name, GoalType type, float failValue, float passValue){
-			this.m_name = name;
+		public NumericalGoal(Data.ValueID valueID, GoalType type, float failValue, float passValue){
+			this.m_valueID = valueID;
 			this.m_goalType = type;
 			this.m_passValue = passValue;
 			this.m_failValue = failValue;
@@ -258,15 +264,15 @@ namespace Challenges
 
 		public void Update(){
 			if (!(m_hasPassed || m_hasFailed)) {
-				this.m_value = (float)Data.GetValue(this.m_name);
-				HasPassed ();
-				HasFailed ();
-				OnUpdate ();
+				this.m_value = (float)Data.GetValue(this.m_valueID);
+				HasPassed();
+				HasFailed();
+				OnUpdate();
 			}
 		}
 
 		public string Name{
-			get { return this.m_name;}
+			get { return this.m_valueID.ToString();}
 		}
 		public GoalType GoalType{
 			get { return this.m_goalType;}
