@@ -30,6 +30,11 @@ namespace Challenges{
 		}
 	}
 
+	public class ChallengeSettings{
+		public static bool CHALLENGE_PANEL_BACKGROUND = true;
+
+	}
+
 	public class ChallengesMod : LoadingExtensionBase, IUserMod, ISerializableDataExtension{
 		ChallengeManagerPanel m_managerPanel;
 
@@ -40,8 +45,6 @@ namespace Challenges{
 		public string Description {
 			get { return "Adds some intereseting challenges to complete within Cities Skylines"; }
 		}
-
-		
 
 		//public UIMainPanel m_UIRoot;
 		public UIView m_view;
@@ -100,7 +103,7 @@ namespace Challenges{
 
 		private void DestroyOld<T>(){
 			int i = 0;
-			while (i < 100) {
+			while (i < 10) {
 				try {
 					UIComponent comp = m_view.FindUIComponent (typeof(T).Name);
 					if(comp == null){return;}
