@@ -24,17 +24,21 @@ namespace Challenges.GUI
 			dialog.Start ();
 
 			dialog.m_title.text = title;
-			dialog.m_title.relativePosition = new Vector3(WIDTH/2 - dialog.m_title.width/2,HEAD/2 - dialog.m_title.height/2);
-			dialog.m_details.text = details;
+			Vector2 screenRes = view.GetScreenResolution();
 
-			dialog.eventAccept += accept;
-			dialog.eventDecline += decline;
+			dialog.m_details.text = details;
+			dialog.m_title.relativePosition = new Vector3(WIDTH/2 - dialog.m_title.width/2,HEAD/2 - dialog.m_title.height/2);
 
 			if (destroyOnOption) {
 				dialog.eventAccept += () => {GameObject.DestroyImmediate(dialog.gameObject);};
 				dialog.eventDecline += () => {GameObject.DestroyImmediate(dialog.gameObject);};
 			}
 
+			dialog.eventAccept += accept;
+			dialog.eventDecline += decline;
+
+
+			dialog.relativePosition = new Vector3(screenRes.x/2 - dialog.width/2,screenRes.y/2 - dialog.height/2);
 			return dialog;
 		}
 
@@ -43,7 +47,8 @@ namespace Challenges.GUI
 
 			this.backgroundSprite = "MenuPanel";
 			this.size = new Vector2 (WIDTH, HEIGHT);
-			this.relativePosition = new Vector2 (WIDTH / 2, HEIGHT / 2);
+			Vector2 screenRes = this.GetUIView ().GetScreenResolution();
+			this.relativePosition = new Vector2 (screenRes.x / 2 - WIDTH/2, screenRes.y / 2 - HEIGHT/2);
 
 			m_title = this.AddUIComponent<UILabel>();
 			m_title.textScale = 1.25f;
@@ -57,7 +62,7 @@ namespace Challenges.GUI
 
 			m_accept = this.AddUIComponent<UIButton> ();
 			m_accept.text = "Yes";
-			m_accept.textScale = 1.5f;
+			m_accept.textScale = 1.25f;
 			m_accept.size = new Vector2 (BUTTON_WIDTH, BUTTON_HEIGHT);
 			m_accept.normalBgSprite = "ButtonMenu";
 			m_accept.hoveredBgSprite = "ButtonMenuHovered";
@@ -68,7 +73,7 @@ namespace Challenges.GUI
 
 			m_decline = this.AddUIComponent<UIButton> ();
 			m_decline.text = "No";
-			m_decline.textScale = 1.5f;
+			m_decline.textScale = 1.25f;
 			m_decline.size = new Vector2 (BUTTON_WIDTH, BUTTON_HEIGHT);
 			m_decline.normalBgSprite = "ButtonMenu";
 			m_decline.hoveredBgSprite = "ButtonMenuHovered";
