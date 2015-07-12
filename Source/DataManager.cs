@@ -11,31 +11,75 @@ using Challenges;
 namespace Challenges{
 	public class Data
 	{
+		public enum ValueID{
+			Population,
+			Cash,
+			Income,
+			AverageGroundPollution,
+			LandValue,
+			CrimeRate,
+			Unemployment,
+			Happiness,
+			ResidentialHappiness,
+			CommercialHappiness,
+			IndustrialHappiness,
+			OfficeHappiness,
+
+			ResidentialDemand,
+			CommericialDemand,
+			IndustrialDemand
+		}
+
 		public static List<Challenge> m_challenges;
-		public static bool m_challengesLoaded = false;
 		private const string modXMLPath = "Challenges.xml";
 		public static string longLocation = null;
 
-		public static double GetValue(string dataName) {
+		public static double GetValue(ValueID dataName) {
 			District gameWorld = Singleton<DistrictManager>.instance.m_districts.m_buffer[0];
 			switch(dataName){
-			case("Population"): return gameWorld.m_populationData.m_finalCount;
-			case("Cash"): return Math.Round(Singleton<EconomyManager>.instance.LastCashAmount/100.0);
-			case("Income"): return Math.Round(Singleton<EconomyManager>.instance.LastCashDelta/100.0);
-			case("Average Ground Pollution"): return gameWorld.m_groundData.m_tempPollution;
-			case("Land Value"):	return gameWorld.m_groundData.m_finalLandvalue;
-			case("Crime Rate"):	return gameWorld.m_finalCrimeRate;
-			case("Unemployment"):return gameWorld.GetUnemployment();				
+			case(ValueID.Population): return gameWorld.m_populationData.m_finalCount;
+			case(ValueID.Cash): return Math.Round(Singleton<EconomyManager>.instance.LastCashAmount/100.0);
+			case(ValueID.Income): return Math.Round(Singleton<EconomyManager>.instance.LastCashDelta/100.0);
+			case(ValueID.AverageGroundPollution): return gameWorld.m_groundData.m_tempPollution;
+			case(ValueID.LandValue): return gameWorld.m_groundData.m_finalLandvalue;
+			case(ValueID.CrimeRate): return gameWorld.m_finalCrimeRate;
+			case(ValueID.Unemployment): return gameWorld.GetUnemployment();				
 				
 			//happiness
-			case("Happiness"): return gameWorld.m_finalHappiness;
-			case("Residential Happiness"): return gameWorld.m_residentialData.m_finalHappiness;
-			case("Commercial Happiness"): return gameWorld.m_commercialData.m_finalHappiness;
-			case("Industrial Happiness"): return gameWorld.m_industrialData.m_finalHappiness;
-			case("Office Happiness"): return gameWorld.m_officeData.m_finalHappiness;
+			case(ValueID.Happiness): return gameWorld.m_finalHappiness;
+			case(ValueID.ResidentialHappiness): return gameWorld.m_residentialData.m_finalHappiness;
+			case(ValueID.CommercialHappiness): return gameWorld.m_commercialData.m_finalHappiness;
+			case(ValueID.IndustrialHappiness): return gameWorld.m_industrialData.m_finalHappiness;
+			case(ValueID.OfficeHappiness): return gameWorld.m_officeData.m_finalHappiness;
+
+			case(ValueID.ResidentialDemand): return Singleton<ZoneManager>.instance.m_residentialDemand;
+			case(ValueID.CommericialDemand): return Singleton<ZoneManager>.instance.m_commercialDemand;
+			case(ValueID.IndustrialDemand): return Singleton<ZoneManager>.instance.m_workplaceDemand;
 			}
-			throw new System.Exception();
-		} 
+			return 0;
+		}
+
+		public static void AddValue(ValueID id, double value){
+			SetValue (id, GetValue (id) + value);
+		}
+
+		public static void SetValue(ValueID id, double value){
+			switch(id){
+			case(ValueID.ResidentialDemand):
+				Singleton<ZoneManager>.instance.m_actualResidentialDemand = (int)value;
+				break;
+			case(ValueID.CommericialDemand):
+				Singleton<ZoneManager>.instance.m_actualCommercialDemand = (int)value;
+				break;
+			case(ValueID.IndustrialDemand):
+				Singleton<ZoneManager>.instance.m_actualWorkplaceDemand = (int)value;
+				break;
+			}
+		}
+
+		public static ValueID StringToValueID(string idName){
+			return (ValueID)Enum.Parse (typeof(ValueID), idName.Replace(" ", string.Empty));
+		}
 
 		public static DateTime GetGameDateTime(){
 			return Singleton<SimulationManager>.instance.m_currentGameTime;
@@ -62,14 +106,17 @@ namespace Challenges{
 				foreach (XmlNode challengeNode in challengeNodes) {	//foreach challenge
 					XmlAttributeCollection challengeAtts = challengeNode.Attributes;
 					FastList<IGoal> goalsToAdd = new FastList<IGoal> ();
+					FastList<IReward> rewardsToAdd = new FastList<IReward> ();
+					FastList<IReward> penaltiesToAdd = new FastList<IReward> ();
+
 					int years = -1, months = -1;
 					foreach (XmlNode node in challengeNode.ChildNodes) {
-
+						Globals.printMessage(node.Name);
 						if (node.Name == "goal") {						
 							string name = node.Attributes ["name"].Value; 
 							float passValue = float.Parse (node.Attributes ["passValue"].Value);
 							float failValue = float.Parse (node.Attributes ["failValue"].Value);
-							NumericalGoal goal = new NumericalGoal (name, GoalTypeExtension.FromComparison (failValue, passValue), failValue, passValue);
+							NumericalGoal goal = new NumericalGoal (StringToValueID (name), GoalTypeExtension.FromComparison (failValue, passValue), failValue, passValue);
 							if (node.Attributes ["passOnce"] != null) {
 								goal.PassOnce = bool.Parse (node.Attributes ["passOnce"].Value);
 							}
@@ -82,9 +129,30 @@ namespace Challenges{
 								years = int.Parse (node.Attributes ["years"].Value);
 							if (node.Attributes ["months"] != null)
 								months = int.Parse (node.Attributes ["months"].Value);
+						} else if (node.Name == "reward") {
+							foreach (XmlNode rewardNode in node.ChildNodes) {
+								if (rewardNode.Name == "boost") {
+									Boost newBoost = new Boost ();
+									newBoost.ValueID = Data.StringToValueID(rewardNode.Attributes ["name"].Value);
+									newBoost.Value = float.Parse (rewardNode.Attributes ["mult"].Value);
+									if (node.Attributes ["years"] != null)
+										newBoost.Years = int.Parse (node.Attributes ["years"].Value);
+									if (node.Attributes ["months"] != null)
+										newBoost.Months = int.Parse (node.Attributes ["months"].Value);
+									rewardsToAdd.Add (newBoost);
+								} else if (rewardNode.Name == "payment") {
+									rewardsToAdd.Add(new Payment (float.Parse (rewardNode.Attributes ["amount"].Value)));
+								}
+							}
+						} else if (node.Name == "penalty") {
+							foreach (XmlNode rewardNode in node.ChildNodes) {
+								if (rewardNode.Name == "payment") {
+									penaltiesToAdd.Add(new Payment (float.Parse (rewardNode.Attributes ["amount"].Value)));
+								}
+							}
 						}
 					}
-					Challenge newChallenge = new Challenge (challengeAtts ["name"].Value, challengeAtts ["desc"].Value, goalsToAdd.ToArray ());
+					Challenge newChallenge = new Challenge (challengeAtts ["name"].Value, challengeAtts ["desc"].Value, goalsToAdd.ToArray (), rewardsToAdd.ToArray(), penaltiesToAdd.ToArray());
 					if (challengeAtts ["requires"] != null) {
 						newChallenge.PassTolerance = int.Parse (challengeAtts ["requires"].Value);
 					}
@@ -97,18 +165,14 @@ namespace Challenges{
 					if (months >= 0) {
 						newChallenge.Months = months;
 					}
-
 					list.Add (newChallenge);
 				}
-				m_challengesLoaded = true;
+				Globals.printMessage ("Finished Loading XML");
 				return list;
-				 
-				Globals.printMessage (list.Count);
 			} else {
 				CreateXML ();
 				return loadXML ();
 			}
-
 		}
 
 		private static void CreateXML (){
