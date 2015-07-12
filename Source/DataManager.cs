@@ -141,13 +141,13 @@ namespace Challenges{
 										newBoost.Months = int.Parse (node.Attributes ["months"].Value);
 									rewardsToAdd.Add (newBoost);
 								} else if (rewardNode.Name == "payment") {
-									rewardsToAdd.Add(new Payment (float.Parse (rewardNode.Attributes ["amount"].Value)));
+									rewardsToAdd.Add(new Payment (int.Parse (rewardNode.Attributes ["amount"].Value)));
 								}
 							}
 						} else if (node.Name == "penalty") {
 							foreach (XmlNode rewardNode in node.ChildNodes) {
 								if (rewardNode.Name == "payment") {
-									penaltiesToAdd.Add(new Payment (float.Parse (rewardNode.Attributes ["amount"].Value)));
+									penaltiesToAdd.Add(new Payment (int.Parse(rewardNode.Attributes ["amount"].Value)));
 								}
 							}
 						}
