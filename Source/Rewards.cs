@@ -20,13 +20,15 @@ namespace Challenges
 		string Name {
 			get;
 		}	
+
+		void Reset();
 		void Use();
 	}
 		
 	public class Payment : IReward{
 		int m_amount;
 
-		public Payment(float amount){
+		public Payment(int amount){
 			this.Value = amount;
 		}
 
@@ -43,8 +45,14 @@ namespace Challenges
 			get{ return "Payment";}
 		}
 		public void Use(){
-			Singleton<EconomyManager>.instance.AddResource(EconomyManager.Resource.RefundAmount, m_amount*100,null);
+			try{
+				Singleton<EconomyManager>.instance.AddResource(EconomyManager.Resource.RefundAmount, m_amount*100, new ItemClass());
+			}catch(Exception e){
+				Globals.printMessage (e.ToString ());
+			}
 		}
+
+		public void Reset(){}
 
 		public override string ToString(){
 			return this.m_amount.ToString(Settings.moneyFormat, (IFormatProvider) LocaleManager.cultureInfo);
@@ -84,6 +92,10 @@ namespace Challenges
 		public int Months{
 			get{ return m_months;}
 			set{ m_months = value;isForever = false;}
+		}
+
+		public void Reset(){
+			m_active = false;
 		}
 
 		public void Use(){
