@@ -12,7 +12,7 @@ namespace Challenges.GUI
 		public static readonly string cacheName = "ChallengeManagerPanel";
 
 		private static readonly float WIDTH = 600f;
-		private static readonly float HEIGHT = 400f;
+		private static readonly float HEIGHT = 600f;
 		private static readonly float HEAD = 40f;
 		private static readonly float SELECT_BUTTON_HEIGHT = 50f;
 
@@ -27,6 +27,8 @@ namespace Challenges.GUI
 		UILabel m_challengeName;
 		UILabel m_challengeDesc; 
 		UILabel m_challengeBreakdown;
+		UILabel m_challengeReward;
+		UILabel m_challengePenalty;
 		UILabel m_challengeDeadline;
 
 		UIListBox m_challengeBrowser; 
@@ -146,12 +148,30 @@ namespace Challenges.GUI
 			m_challengeDesc.Disable ();
 
 			m_challengeBreakdown = m_challengeDetailsPanel.AddUIComponent<UILabel> ();
-			m_challengeBreakdown.text = "Challenge Breakdown\n";
+			m_challengeBreakdown.text = "Breakdown\n";
 			//m_challengeBreakdown.backgroundSprite = "GenericPanel";
 			m_challengeBreakdown.minimumSize = new Vector2 (m_challengeDetailsPanel.width - SPACING * 2, 20);
 			m_challengeBreakdown.wordWrap = true;
 			m_challengeBreakdown.disabledTextColor = Color.gray;
 			m_challengeBreakdown.Disable ();
+
+			m_challengeReward = m_challengeDetailsPanel.AddUIComponent<UILabel> ();
+			m_challengeReward.text = "Reward\n";
+			//m_challengeBreakdown.backgroundSprite = "GenericPanel";
+			m_challengeReward.minimumSize = new Vector2 (m_challengeDetailsPanel.width - SPACING * 2, 20);
+			m_challengeReward.wordWrap = true;
+			m_challengeReward.autoSize = true;
+			m_challengeReward.disabledTextColor = Color.gray;
+			m_challengeReward.Disable ();
+
+			m_challengePenalty = m_challengeDetailsPanel.AddUIComponent<UILabel> ();
+			m_challengePenalty.text = "Penalty\n";
+			//m_challengeBreakdown.backgroundSprite = "GenericPanel";
+			m_challengePenalty.minimumSize = new Vector2 (m_challengeDetailsPanel.width - SPACING * 2, 20);
+			m_challengePenalty.wordWrap = true;
+			m_challengePenalty.autoSize = true;
+			m_challengePenalty.disabledTextColor = Color.gray;
+			m_challengePenalty.Disable ();
 
 			m_challengeDeadline = m_challengeDetailsPanel.AddUIComponent<UILabel> ();
 			m_challengeDeadline.text = "Duration\n";
@@ -180,31 +200,65 @@ namespace Challenges.GUI
 			Challenge selectedChallenge = m_challenges [value];
 			m_challengeName.text = "Name\n    " + selectedChallenge.Name;
 			m_challengeDesc.text = "Description\n    " + selectedChallenge.Description;
-			m_challengeBreakdown.text = "Challenge Breakdown" + GoalsToString (selectedChallenge.Goals);
+			m_challengeBreakdown.text = "Breakdown" + GoalsToString (selectedChallenge.Goals); 
+			if (selectedChallenge.Rewards != null && selectedChallenge.Rewards.Length >= 0) {
+				m_challengeReward.text = "Reward" + RewardsToString (selectedChallenge.Rewards);
+			} else {
+				m_challengeReward.text = "";
+			}
+
+			if (selectedChallenge.Penalties != null && selectedChallenge.Penalties.Length >= 0) {
+				m_challengePenalty.text = "Penalty" + RewardsToString (selectedChallenge.Penalties);
+			} else {
+				m_challengePenalty.text = "";
+			}
 
 			if (selectedChallenge.m_hasDeadline){
 				m_challengeDeadline.text = "Duration\n    " + selectedChallenge.Years + " years, " + selectedChallenge.Months + " months";
 			} else {
 				m_challengeDeadline.text = "Duration\n    Unlimited";
 			}
+
 			m_challengeName.Enable ();
 			m_challengeDesc.Enable ();
 			m_challengeBreakdown.Enable ();
+			m_challengeReward.Enable ();
+			m_challengePenalty.Enable ();
 			m_challengeDeadline.Enable ();
 			FormatDetails ();
 		}
 
 		public void FormatDetails(){
-			m_challengeName.relativePosition = new Vector3 (SPACING, SPACING);
-			m_challengeDesc.relativePosition = m_challengeName.relativePosition + new Vector3 (0, m_challengeName.height + SPACING, 0);
-			m_challengeBreakdown.relativePosition = m_challengeDesc.relativePosition + new Vector3 (0, m_challengeDesc.height + SPACING, 0);
-			m_challengeDeadline.relativePosition = m_challengeBreakdown.relativePosition + new Vector3 (0, m_challengeBreakdown.height + SPACING, 0);
+			FastList<UIComponent> comps = new FastList<UIComponent> ();
+			comps.Add (m_challengeName);
+			comps.Add (m_challengeDesc);
+			comps.Add (m_challengeBreakdown);
+			if (!m_challengeReward.text.Equals ("")) {	
+				comps.Add(m_challengeReward);
+			}
+			if (!m_challengePenalty.text.Equals ("")) {
+				comps.Add (m_challengePenalty);
+			}
+			comps.Add (m_challengeDeadline);
+			AutoSpace (comps.ToArray ());
+		}
+
+		private void AutoSpace(params UIComponent[] components){
+			UIComponent prevComp = null;
+			foreach (UIComponent comp in components) {
+				if (prevComp == null) {
+					comp.relativePosition = new Vector3 (SPACING, SPACING);
+				} else {
+					comp.relativePosition = prevComp.relativePosition + new Vector3 (0, prevComp.height + SPACING);
+				}
+				prevComp = comp;
+			}
 		}
 
 		public string GoalsToString(IGoal[] goals){
 			string output = "";
 			foreach (IGoal goal in goals) {
-				output += "\n    - ";
+				output += "\n    ";
 				if (goal.GoalType == GoalType.MAXIMISE) {
 					if (goal.PassOnce && goal.FailOnce) {
 						output += "Get your " + goal.Name + " to " + goal.PassValue + " once without ever dropping below " + goal.FailValue;
@@ -230,6 +284,30 @@ namespace Challenges.GUI
 			return output;
 		}
 
+		public string RewardsToString(IReward[] rewards){
+			string output = "";
+			foreach (IReward reward in rewards) {
+				output += "\n    ";
+				if (reward.GetType ().Equals (typeof(Boost))) {
+					Boost boost = (Boost)reward;
+					output += "Boosts " + boost.Name + " by a factor of " + boost.Value;
+					if (!boost.isForever) {
+						output += " for ";
+						if (boost.Years >= 0 && boost.Months >= 0) {
+							output += boost.Years + " year(s) and " + boost.Months + " month(s)";
+						} else if (boost.Years >= 0) {
+							output += boost.Years + " year(s)";
+						} else if (boost.Months >= 0) {
+							output += boost.Months + " month(s)";
+						}
+					}
+				} else if (reward.GetType ().Equals (typeof(Payment))) {
+					output += reward.ToString ();
+				}
+			}
+			return output;
+		}
+
 		private void ChallengeSelected(UIComponent component, UIMouseEventParameter eventArgs){
 			if (m_selectedIndex != -1) {
 				m_challengePanel.SetCurrentChallenge(m_challenges [this.m_selectedIndex],false);
@@ -239,13 +317,10 @@ namespace Challenges.GUI
 
 		private void CycleVisibility(){ 
 			if (!m_challengePanel.isVisible && m_challengePanel.CurrentChallenge != null) {
-				Globals.printMessage ("1");
 				m_challengePanel.Show ();
 			} else if (!this.isVisible) {
-				Globals.printMessage ("2");
 				this.Show ();
 			} else {
-				Globals.printMessage ("3");
 				this.Hide ();
 				m_challengePanel.Hide ();
 			}
@@ -253,4 +328,3 @@ namespace Challenges.GUI
 
 	}
 }
-
