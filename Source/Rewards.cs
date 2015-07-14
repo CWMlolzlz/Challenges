@@ -22,7 +22,7 @@ namespace Challenges
 		}	
 
 		void Reset();
-		void Use();
+		bool Use();
 	}
 		
 	public class Payment : IReward{
@@ -44,12 +44,14 @@ namespace Challenges
 		public string Name{
 			get{ return "Payment";}
 		}
-		public void Use(){
+		public bool Use(){
 			try{
 				Singleton<EconomyManager>.instance.AddResource(EconomyManager.Resource.RefundAmount, m_amount*100, new ItemClass());
+				return true;
 			}catch(Exception e){
 				Globals.printMessage (e.ToString ());
 			}
+			return false;
 		}
 
 		public void Reset(){}
@@ -59,9 +61,8 @@ namespace Challenges
 		}
 	}
 
-	public class Boost : MonoBehaviour , IReward{
-		float m_mult;
-		float m_baseValue;
+	public class Boost : IReward{
+		float m_value;
 		int m_years = 0;
 		int m_months = 0;
 		public bool isForever = true;
@@ -76,8 +77,8 @@ namespace Challenges
 		}
 
 		public float Value{
-			get{ return m_mult; }
-			set{ m_mult = value;}
+			get{ return m_value; }
+			set{ m_value = value;}
 		}
 
 		public string Name{
@@ -98,27 +99,27 @@ namespace Challenges
 			m_active = false;
 		}
 
-		public void Use(){
-			CalculateEndDate ();
-			if (!isForever) {
-				m_baseValue = (float)Data.GetValue (m_valueID);
-			}
-			m_active = true;
-		}
-
 		private void CalculateEndDate(){
 			m_endDate = Data.GetGameDateTime().AddYears (m_years).AddMonths (m_months);
+			Globals.printMessage ("Years, Months: " + m_years + ", " + m_months);
+			Globals.printMessage (m_endDate.ToString());
 		}
 
-		void Update(){
+		public bool Use(){
 			if (m_active) {
+				//Globals.printMessage ("Using Boost");
 				if (isForever || Data.GetGameDateTime () < m_endDate) {
-					Data.SetValue(m_valueID, m_baseValue * m_mult);
+					Data.SetValue (m_valueID, m_value);
 				} else {
-					//boost over
-					GameObject.DestroyImmediate(this.gameObject);
+					Globals.printMessage ("Boost Ended");
+					return true;
 				}
+			} else {
+				CalculateEndDate ();
+				//Globals.printMessage ("Using boost type: " + m_valueID.ToString ());
+				m_active = true;
 			}
+			return false;
 		}
 
 	}
