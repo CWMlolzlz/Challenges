@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using ColossalFramework.UI;
 using ColossalFramework.Math;
-using Challenges;
+using ChallengesMod;
 using UnityEngine;
+using System.Xml;
 
-namespace Challenges
+namespace ChallengesMod
 {
 	public enum ChallengeEventType{
 		ACED,
@@ -34,8 +35,8 @@ namespace Challenges
 		public DateTime m_mapStart;
 		DateTime m_deadline;
 		IGoal[] m_goals;
-		IReward[] m_rewards;
-		IReward[] m_penalties;
+		IReward[] m_rewards = new IReward[0];
+		IReward[] m_penalties = new IReward[0];
 
 		int m_failedGoals;
 		int m_passedGoals;
@@ -114,11 +115,18 @@ namespace Challenges
 			}
 		}
 
-		public void Start(DateTime levelStart){
-			m_mapStart = levelStart;
-			if (m_hasDeadline) { //if the challenge has a defined period
-				m_deadline = m_mapStart.AddYears (m_years).AddMonths (m_months);
+		public DateTime MapStartTime{
+			get{ return m_mapStart;}
+			set{ 
+				m_mapStart = value;
+				if (m_hasDeadline) { //if the challenge has a defined period
+					m_deadline = m_mapStart.AddYears (m_years).AddMonths (m_months);
+				}
 			}
+		}
+
+		public void Start(){
+			
 			m_started = true;
 			m_active = true;
 		}
@@ -208,7 +216,7 @@ namespace Challenges
 
 	public delegate void GoalEvent();
 
-	public interface IGoal{
+	public interface IGoal : Data.IDataAccessor{
 		void Update();
 		float GetValue();
 		float GetProportion();
@@ -217,8 +225,8 @@ namespace Challenges
 		bool HasPassed();
 		bool HasFailed();
 
-		bool HasAlreadyPassed();
-		bool HasAlreadyFailed();
+		bool HasAlreadyPassed{ get; set; }
+		bool HasAlreadyFailed{ get; set; }
 
 		string Name{ get; } 
 		string PassValue{ get; }
@@ -241,12 +249,11 @@ namespace Challenges
 		event GoalEvent OnUpdate;
 	}
 
-	[Serializable()]
 	public class NumericalGoal : IGoal{
 		float m_failValue;
 		float m_passValue;
 	 	float m_value;
-		public Data.ValueID m_valueID;
+		Data.ValueID m_valueID;
 		public GoalType m_goalType;
 		bool m_passOnce = true;
 		bool m_failOnce = true;
@@ -261,6 +268,11 @@ namespace Challenges
 			this.m_failValue = failValue;
 			//this.m_value = GetValue ();
 		} 
+
+		public Data.ValueID ValueID{
+			get{ return m_valueID; }
+			set{ m_valueID = value; }
+		}
 
 		public bool PassOnce{
 			get{ return m_passOnce;}
@@ -360,17 +372,16 @@ namespace Challenges
 			return failing;
 		} 
 
-		public bool HasAlreadyPassed(){
-			return m_hasPassed;
+		public bool HasAlreadyPassed{
+			get{ return m_hasPassed; }
+			set{ m_hasPassed = value; }
 		}
-		public bool HasAlreadyFailed(){
-			return m_hasFailed;
+		public bool HasAlreadyFailed {
+			get {return m_hasFailed;}
+			set {m_hasFailed = value;}
 		}
 
-
-		[field:NonSerialized]
 		public event GoalEvent OnPassed, OnFailed;
-		[field:NonSerialized]
 		public event GoalEvent OnUpdate;
 	}
 }
