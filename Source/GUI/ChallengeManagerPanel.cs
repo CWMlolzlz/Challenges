@@ -34,12 +34,14 @@ namespace Challenges.GUI
 		UIListBox m_challengeBrowser; 
 		UIPanel m_challengeListPanel;
 		UIButton m_selectButton;
+		UIButton m_refresh;
 
 		UILabel m_title;
 		UIButton m_closeButton;
 		UIDragHandle m_dragHandle;
 
 		List<Challenge> m_challenges;
+		FastList<IReward> activeRewards = new FastList<IReward> ();
 		int m_selectedIndex = -1;
 
 		public ChallengePanel CurrentChallengePanel{
@@ -51,6 +53,11 @@ namespace Challenges.GUI
 			base.Update ();
 			if ((Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.RightControl)) && Input.GetKeyDown (KeyCode.C)) {
 				this.CycleVisibility ();
+			}
+			foreach (IReward r in activeRewards) {				
+				if (r.Use ()) {
+					activeRewards.Remove (r);
+				}
 			}
 		}
 
@@ -68,6 +75,9 @@ namespace Challenges.GUI
 			this.cachedName = cacheName;
 
 			m_challengePanel = (ChallengePanel) this.GetUIView ().AddUIComponent (typeof(ChallengePanel));
+			m_challengePanel.manager = this;
+			m_challengePanel.OnChallengeStarted += () => {m_selectButton.Disable ();};
+			m_challengePanel.OnChallengeEnded += () => {m_selectButton.Enable ();};
 			m_challengePanel.Hide ();
 
 			m_title = this.AddUIComponent<UILabel> ();
@@ -128,6 +138,21 @@ namespace Challenges.GUI
 			m_selectButton.Disable ();
 			m_selectButton.eventClick += ChallengeSelected;
 
+			m_refresh = this.AddUIComponent<UIButton> ();
+			m_refresh.size = new Vector2 (60,24);
+			m_refresh.text = "Refresh";
+			m_refresh.textScale = 0.875f;
+			m_refresh.normalBgSprite = "ButtonMenu";
+			m_refresh.hoveredBgSprite = "ButtonMenuHovered";
+			m_refresh.pressedBgSprite = "ButtonMenuPressed";
+			m_refresh.disabledBgSprite = "ButtonMenuDisabled";
+			//m_refresh.color = new Color32(255,0,0,255);
+			//m_refresh.focusedColor = m_refresh.color;
+			//m_refresh.hoveredColor = m_refresh.color;
+			//m_refresh.pressedColor = m_refresh.color;
+			m_refresh.relativePosition = m_closeButton.relativePosition + new Vector3 (-60 -SPACING,6f);
+			m_refresh.eventClick += (component, eventParam) => {LoadChallenges();};
+
 			m_challengeDetailsPanel = this.AddUIComponent<UIPanel> ();
 			m_challengeDetailsPanel.size = new Vector2 (WIDTH - LIST_PANEL_WIDTH, HEIGHT - HEAD);
 			//m_challengeDetailsPanel.backgroundSprite = "GenericPanel";
@@ -181,9 +206,15 @@ namespace Challenges.GUI
 			FormatDetails ();
 		}
 
+		public void AddToActiveRewards(IReward[] rewards){
+			foreach (IReward r in rewards) {
+				activeRewards.Add (r);
+			}
+		}
+
 		public void LoadChallenges(){
 			
-			m_challenges = Data.loadXML();
+			m_challenges = Data.SearchForMods();
 			m_challenges.Sort ((x, y) => string.Compare(x.Name, y.Name));
 			string[] challengeNames = new string[m_challenges.Count];
 			for (int i = 0; i < challengeNames.Length; i++){
@@ -309,6 +340,7 @@ namespace Challenges.GUI
 		}
 
 		private void ChallengeSelected(UIComponent component, UIMouseEventParameter eventArgs){
+			Globals.printMessage ("Challenge Selected: " + m_selectedIndex);
 			if (m_selectedIndex != -1) {
 				m_challengePanel.SetCurrentChallenge(m_challenges [this.m_selectedIndex],false);
 			}
