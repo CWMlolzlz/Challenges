@@ -1,5 +1,5 @@
 ﻿using ColossalFramework;
-//using ColossalFramework.Plugins;
+using ColossalFramework.Plugins;
 using ColossalFramework.IO;
 using UnityEngine;
 using System.Xml;
@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Challenges;
+
 
 namespace Challenges{
 	public class Data
@@ -31,8 +32,8 @@ namespace Challenges{
 		}
 
 		public static List<Challenge> m_challenges;
-		private const string modXMLPath = "Challenges.xml";
-		public static string longLocation = null;
+		private static readonly string basicModFolder = DataLocation.applicationBase + @"\Challenges";
+		private static readonly string modXMLPath = "Challenges.xml";
 
 		public static double GetValue(ValueID dataName) {
 			District gameWorld = Singleton<DistrictManager>.instance.m_districts.m_buffer[0];
@@ -66,13 +67,16 @@ namespace Challenges{
 		public static void SetValue(ValueID id, double value){
 			switch(id){
 			case(ValueID.ResidentialDemand):
-				Singleton<ZoneManager>.instance.m_actualResidentialDemand = (int)value;
+				Singleton<ZoneManager>.instance.m_actualResidentialDemand= (int)value;
+				Singleton<ZoneManager>.instance.m_residentialDemand = (int)value;
 				break;
 			case(ValueID.CommericialDemand):
-				Singleton<ZoneManager>.instance.m_actualCommercialDemand = (int)value;
+				Singleton<ZoneManager>.instance.m_actualCommercialDemand= (int)value;
+				Singleton<ZoneManager>.instance.m_commercialDemand = (int)value;
 				break;
 			case(ValueID.IndustrialDemand):
-				Singleton<ZoneManager>.instance.m_actualWorkplaceDemand = (int)value;
+				Singleton<ZoneManager>.instance.m_actualWorkplaceDemand= (int)value;
+				Singleton<ZoneManager>.instance.m_workplaceDemand= (int)value;
 				break;
 			}
 		}
@@ -85,22 +89,43 @@ namespace Challenges{
 			return Singleton<SimulationManager>.instance.m_currentGameTime;
 		}
 
-		public static List<Challenge> loadXML(){
-			Globals.printMessage("Load XML()");
-			if (longLocation == null) {				
-				//Globals.printMessage(DataLocation.addonsPath);
-				longLocation = DataLocation.applicationBase +"\\"+ modXMLPath;
-				Globals.printMessage (longLocation);
-				//Globals.printMessage(DataLocation.assetsPath);
-				//Globals.printMessage(DataLocation.addonsPath);
-				//Globals.printMessage(DataLocation.addonsPath);
+		public static List<Challenge> SearchForMods(){
+			List<Challenge> output = new List<Challenge> ();
+			if (!Directory.Exists (basicModFolder)) {
+				CreateChallengesFolder (basicModFolder);
 			}
-			if (FileUtils.Exists (longLocation)) {
-				Globals.printMessage("File Exists");
-				List<Challenge> list = new List<Challenge> ();
+			SearchFolderForChallenges (basicModFolder, ref output, -1);
+			foreach (PluginManager.PluginInfo info in Singleton<PluginManager>.instance.GetPluginsInfo()) {
+				//Globals.printMessage (info.modPath);
+				SearchFolderForChallenges (info.modPath, ref output, 2); //dont go more than 2 folders deep, reduces search time drastically 
+			}
+			Globals.ForcePrintMessage (output.Count);
+			return output;
+		}
 
+		public static void SearchFolderForChallenges(string dir, ref List<Challenge> challenges, int depth){
+			if (depth != 0) {
+				foreach (string subFolder in Directory.GetDirectories(dir)) {
+					//Globals.printMessage (subFolder);
+					SearchFolderForChallenges (subFolder, ref challenges, depth - 1);
+				}
+			}
+
+			foreach (string file in Directory.GetFiles(dir)) {
+				//Globals.printMessage (file);
+				if (file.Contains (".xml")) {
+					LoadXML (file, ref challenges);
+				}
+			}
+
+
+		}
+
+		public static void LoadXML(string fileLocation, ref List<Challenge> challenges){
+			try{
+			//if (FileUtils.Exists (fileLocation)){
 				XmlDocument xmldoc = new XmlDocument ();
-				FileStream fs = new FileStream (longLocation, FileMode.Open, FileAccess.Read);
+				FileStream fs = new FileStream (fileLocation, FileMode.Open, FileAccess.Read);
 				xmldoc.Load (fs); 
 				XmlNodeList challengeNodes = xmldoc.SelectNodes ("challengelist") [0].SelectNodes ("challenge");
 				foreach (XmlNode challengeNode in challengeNodes) {	//foreach challenge
@@ -111,8 +136,8 @@ namespace Challenges{
 
 					int years = -1, months = -1;
 					foreach (XmlNode node in challengeNode.ChildNodes) {
-						Globals.printMessage(node.Name);
-						if (node.Name == "goal") {						
+						//Globals.printMessage(node.Name);
+						if (node.Name == "goal") {				
 							string name = node.Attributes ["name"].Value; 
 							float passValue = float.Parse (node.Attributes ["passValue"].Value);
 							float failValue = float.Parse (node.Attributes ["failValue"].Value);
@@ -134,11 +159,13 @@ namespace Challenges{
 								if (rewardNode.Name == "boost") {
 									Boost newBoost = new Boost ();
 									newBoost.ValueID = Data.StringToValueID(rewardNode.Attributes ["name"].Value);
-									newBoost.Value = float.Parse (rewardNode.Attributes ["mult"].Value);
-									if (node.Attributes ["years"] != null)
-										newBoost.Years = int.Parse (node.Attributes ["years"].Value);
-									if (node.Attributes ["months"] != null)
-										newBoost.Months = int.Parse (node.Attributes ["months"].Value);
+									newBoost.Value = float.Parse (rewardNode.Attributes ["value"].Value);
+									if (rewardNode.Attributes ["years"] != null){
+										newBoost.Years = int.Parse (rewardNode.Attributes ["years"].Value);
+									}
+									if (rewardNode.Attributes ["months"] != null){
+										newBoost.Months = int.Parse (rewardNode.Attributes ["months"].Value);
+									}
 									rewardsToAdd.Add (newBoost);
 								} else if (rewardNode.Name == "payment") {
 									rewardsToAdd.Add(new Payment (int.Parse (rewardNode.Attributes ["amount"].Value)));
@@ -165,19 +192,17 @@ namespace Challenges{
 					if (months >= 0) {
 						newChallenge.Months = months;
 					}
-					list.Add (newChallenge);
+					challenges.Add (newChallenge);
 				}
-				Globals.printMessage ("Finished Loading XML");
-				return list;
-			} else {
-				CreateXML ();
-				return loadXML ();
+
+			}catch(Exception e){
+				Globals.printMessage (e.ToString ());
 			}
 		}
 
-		private static void CreateXML (){
+		private static void CreateChallengesFolder (string location){
 			string fileContents = "<?xml version='1.0' encoding='UTF-8' ?>\n<challengelist>\n\t<challenge version='1.0' name='Population 1' desc='Reach a population count of 2000' failTolerance='0'>\n\t\t<goal name='Population' failValue='0' passValue='2000' passOnce='true' failOnce='false'/>\n\t</challenge>\n\t<challenge version='1.0' name='Income 1' desc='Have an income of over $2000 per week' failTolerance='0'>\n\t\t<goal name='Income' failValue='-1000' passValue='2000' passOnce='true' failOnce='true'/>\n\t</challenge>\n\t<challenge version='1.0' name='Population 2' desc='Get a population of 10000 people and keep your crime rate below 8%' failTolerance='0' passTolerance='1'>\n\t\t<goal name='Population' failValue='0' passValue='10000' passOnce='true' failOnce='false'/>\n\t\t<goal name='Crime Rate' failValue='8' passValue='0' passOnce='false' failOnce='true'/>\n\t</challenge>\n\t<challenge version='1.0' name='Income 2' desc='Have an income of over $8000 per week while keeping your commercial zones happy' failTolerance='0' passTolerance='1'>\n\t\t<goal name='Income' failValue='-200' passValue='8000' passOnce='true' failOnce='true'/>\n\t\t<goal name='Commercial Happiness' failValue='60' passValue='100' passOnce='false' failOnce='true'/>\n\t</challenge>\n\t<challenge version='1.0' name='Population 3' desc='Reach a population count of 50000 while keeping them happy' failTolerance='0'>\n\t\t<goal name='Population' failValue='0' passValue='50000' passOnce='true' failOnce='false'/>\n\t\t<goal name='Residential Happiness' failValue='75' passValue='100' passOnce='false' failOnce='true'/>\n\t</challenge>\n\t<challenge version='1.0' name='Income 3' desc='Have an income of over $15000 per week without ever running at a loss' failTolerance='0' passTolerance='1'>\n\t\t<goal name='Income' failValue='0' passValue='8000' passOnce='true' failOnce='true'/>\n\t</challenge>\n</challengelist>";
-			using (System.IO.StreamWriter file = new System.IO.StreamWriter(longLocation, true))
+			using (System.IO.StreamWriter file = new System.IO.StreamWriter(location, true))
 			{
 				file.WriteLine(fileContents);
 			}
