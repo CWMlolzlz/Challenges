@@ -37,11 +37,12 @@
   <ItemGroup>
     <Compile Include="Source\Challenges.cs" />
     <Compile Include="Source\ChallengeGoals.cs" />
-    <Compile Include="Source\DataCollector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Source\GUI\ChallengeManagerPanel.cs" />
     <Compile Include="Source\GUI\ChallengePanel.cs" />
     <Compile Include="Source\GUI\UIDialog.cs" />
+    <Compile Include="Source\DataManager.cs" />
+    <Compile Include="Source\Rewards.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="ICities">
