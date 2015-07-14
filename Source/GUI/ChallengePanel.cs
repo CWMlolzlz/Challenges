@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
 using ColossalFramework.UI;
 using ColossalFramework;
-using Challenges;
+using ChallengesMod.GUI;
 using System;
 using System.Collections.Generic;
 
-namespace Challenges.GUI
+namespace ChallengesMod
 {
 	public class ChallengePanel : UIPanel{
 		public static readonly float WIDTH = 400f;
@@ -58,7 +58,7 @@ namespace Challenges.GUI
 			m_closeButton.hoveredBgSprite = "buttonclosehover";
 			m_closeButton.pressedBgSprite = "buttonclosepressed"; 
 			m_closeButton.relativePosition = new Vector3 (WIDTH - 3f - m_closeButton.width, 5);
-			Globals.printMessage(m_closeButton.size);
+			Debug.PrintMessage(m_closeButton.size);
 			m_closeButton.eventClick += (component, eventParam) => {
 				this.Hide ();
 			};
@@ -111,11 +111,11 @@ namespace Challenges.GUI
 		}
 
 		public void SetCurrentChallenge(Challenge challenge, bool resuming){
-			Globals.printMessage("SetCurrentChallenge()");
+			Debug.PrintMessage("SetCurrentChallenge()");
 			if(m_challenge != null){ //ensures the previous challenge has been removed
 				DestroyChallenge ();
 			}
-			Globals.printMessage("Post DestroyChallenge()");
+			Debug.PrintMessage("Post DestroyChallenge()");
 			m_challenge = challenge;
 			//populate goal panels
 			IGoal[] goals = m_challenge.Goals;
@@ -127,16 +127,17 @@ namespace Challenges.GUI
 
 			if (resuming) {
 				if (m_challenge.m_finished) {
-					Globals.printMessage ("Challenges have finished already");
+					Debug.PrintMessage ("Challenges have finished already");
 				} else if (m_challenge.m_started) { //has started before hand
-					Globals.printMessage ("Continuing Challenges");
+					Debug.PrintMessage ("Continuing Challenges");
 					m_challenge.Resume();
 				} else {
-					Globals.printMessage ("Challenge has neither started nor finished and was found in save");
+					Debug.PrintMessage ("Challenge has neither started nor finished and was found in save");
 				}
 			} else {
-				Globals.printMessage("Starting Challenges First Time");
-				m_challenge.Start(Data.GetGameDateTime());
+				Debug.PrintMessage("Starting Challenges First Time");
+				m_challenge.MapStartTime = Data.GetGameDateTime ();
+				m_challenge.Start();
 			}
 
 			OnChallengeStarted ();
@@ -145,12 +146,12 @@ namespace Challenges.GUI
 				switch(type){
 				case(ChallengeEventType.ACED):
 				case(ChallengeEventType.COMPLETED):
-					Globals.printMessage("Completed");
+					Debug.PrintMessage("Completed");
 					CompleteChallenge(); 
 					break;
 				case(ChallengeEventType.FAILED):
 				case(ChallengeEventType.TOO_LATE):			
-					Globals.printMessage("Failed");
+					Debug.PrintMessage("Failed");
 					ForfeitChallenge();
 					break;
 				}
@@ -168,7 +169,7 @@ namespace Challenges.GUI
 		}
 
 		private void CompleteChallenge(){
-			Globals.printMessage ("Completing");
+			Debug.PrintMessage ("Completing");
 			if (m_challenge.Rewards != null) {
 				manager.AddToActiveRewards (m_challenge.Rewards);
 			}
@@ -176,7 +177,7 @@ namespace Challenges.GUI
 		}
 
 		private void ForfeitChallenge(){
-			Globals.printMessage("Forfeiting");
+			Debug.PrintMessage("Forfeiting");
 			if (m_challenge.Penalties != null) {
 				manager.AddToActiveRewards (m_challenge.Penalties);
 			}
@@ -187,12 +188,12 @@ namespace Challenges.GUI
 			foreach (GoalProgressPanel goalPanel in goalPanels) {
 				GameObject.DestroyImmediate(goalPanel);
 			}
-			Globals.printMessage ("Finsihed destroying");
+			Debug.PrintMessage ("Finsihed destroying");
 			m_challenge.Reset ();
 			m_challenge = null;
 			OnChallengeEnded ();
 			this.Hide();
-			Globals.printMessage ("Hidden");
+			Debug.PrintMessage ("Hidden");
 		}
 
 		public override void Update(){
@@ -267,7 +268,7 @@ namespace Challenges.GUI
 			m_bar.spriteName = "GenericPanel";
 
 			if (m_goal.GoalType == GoalType.MINIMISE) {
-				Globals.printMessage ("Color changed");
+				Debug.PrintMessage ("Color changed");
 				m_bar.color = new Color32 (255, 255, 0, 255);
 			} else {
 				m_bar.color = Color.green;
@@ -275,19 +276,19 @@ namespace Challenges.GUI
 			m_bar.size = m_barBackground.size;
 			m_bar.relativePosition = m_barBackground.relativePosition;
 
-			if (m_goal.HasAlreadyPassed ()) {
-				Globals.printMessage ("Already Passed");
+			if (m_goal.HasAlreadyPassed) {
+				Debug.PrintMessage ("Already Passed");
 				this.m_bar.color = Color.cyan;
 				this.m_barBackground.color = Color.cyan;
 				this.color = new Color32 (0, 128, 128, 255);
-			} else if (m_goal.HasAlreadyFailed ()) {
-				Globals.printMessage ("Already Failed");
+			} else if (m_goal.HasAlreadyFailed) {
+				Debug.PrintMessage ("Already Failed");
 				this.m_bar.color = Color.red;
 				this.m_barBackground.color = Color.red;
 				this.color = new Color32 (128, 0, 0, 255);
 			} else {
 
-				Globals.printMessage ("Attaching Pass/Fail events");
+				Debug.PrintMessage ("Attaching Pass/Fail events");
 				this.m_goal.OnPassed += () => {
 					this.m_bar.color = Color.cyan;
 					this.m_barBackground.color = Color.cyan;

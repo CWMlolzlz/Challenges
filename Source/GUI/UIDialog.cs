@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using ColossalFramework.UI;
 
-namespace Challenges.GUI
+namespace ChallengesMod.GUI
 {
 	public class UIDialog : UIPanel{
 
