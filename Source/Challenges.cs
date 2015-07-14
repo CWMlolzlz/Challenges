@@ -14,7 +14,7 @@ using Challenges.GUI;
 namespace Challenges{
 
 	public class Globals{
-		public static readonly bool DEBUG = true;
+		public static readonly bool DEBUG = false;
 
 		public static Challenge m_selectedChallenge;
 		public static Challenge m_loadedChallenge;
@@ -24,6 +24,10 @@ namespace Challenges{
 				DebugOutputPanel.AddMessage (PluginManager.MessageType.Message, msg.ToString());
 			}
 		}
+		public static void ForcePrintMessage(object msg){
+			DebugOutputPanel.AddMessage (PluginManager.MessageType.Message, msg.ToString());
+		}
+
 		public static double Clamp(double value, double min, double max)  
 		{  
 			return (value < min) ? min : (value > max) ? max : value;  
@@ -32,15 +36,17 @@ namespace Challenges{
 
 	public class ChallengeSettings{
 		public static bool CHALLENGE_PANEL_BACKGROUND = true;
-
 	}
 
 	public class ChallengesMod : LoadingExtensionBase, IUserMod, ISerializableDataExtension{
 		ChallengeManagerPanel m_managerPanel;
 
 		public string Name {
-			get{ return "Challenges"; }
-		}
+			get{
+				//Data.SearchForMods(); 
+				return "Challenges"; 		
+			}
+		} 
 
 		public string Description {
 			get { return "Adds some intereseting challenges to complete within Cities Skylines"; }
@@ -188,7 +194,6 @@ namespace Challenges{
 				} else {
 					Globals.printMessage ("No challenge will be run because a challenge has not been selected");
 				}
-
 			}
 		}
 
