@@ -12,10 +12,16 @@ namespace Challenges.GUI
 		public static readonly float HEAD = 40f;
 		public static readonly float SPACING = 10f;
 		private static readonly float BUTTON_WIDTH = 60f,BUTTON_HEIGHT = 24f,CLOSE_BUTTON_SIZE = 32f;
+
+		public ChallengeManagerPanel manager;
+		public delegate void PanelEvent();
+
+		public event PanelEvent OnChallengeEnded;
+		public event PanelEvent OnChallengeStarted;
+
 		UILabel m_titleLabel;
 		UILabel m_startTimeLabel;
 		UILabel m_endTimeLabel;
-		UIPanel m_forfeitPanel;
 
 		UIButton m_startButton;
 		UIButton m_endButton;
@@ -133,6 +139,8 @@ namespace Challenges.GUI
 				m_challenge.Start(Data.GetGameDateTime());
 			}
 
+			OnChallengeStarted ();
+
 			m_challenge.OnChallengeFinished += (ChallengeEventType type) => {
 				switch(type){
 				case(ChallengeEventType.ACED):
@@ -161,8 +169,8 @@ namespace Challenges.GUI
 
 		private void CompleteChallenge(){
 			Globals.printMessage ("Completing");
-			foreach(IReward reward in m_challenge.Rewards){
-				reward.Use();
+			if (m_challenge.Rewards != null) {
+				manager.AddToActiveRewards (m_challenge.Rewards);
 			}
 			DestroyChallenge ();
 		}
@@ -170,9 +178,7 @@ namespace Challenges.GUI
 		private void ForfeitChallenge(){
 			Globals.printMessage("Forfeiting");
 			if (m_challenge.Penalties != null) {
-				foreach (IReward penalty in m_challenge.Penalties) {
-					penalty.Use ();
-				}
+				manager.AddToActiveRewards (m_challenge.Penalties);
 			}
 			DestroyChallenge ();
 		}
@@ -184,6 +190,7 @@ namespace Challenges.GUI
 			Globals.printMessage ("Finsihed destroying");
 			m_challenge.Reset ();
 			m_challenge = null;
+			OnChallengeEnded ();
 			this.Hide();
 			Globals.printMessage ("Hidden");
 		}
@@ -210,8 +217,6 @@ namespace Challenges.GUI
 		private UILabel m_label;
 		private UILabel m_failLabel;
 		private UILabel m_passLabel;
-		bool m_loaded = false;
-		private string text, passText, failText; 
 
 		private IGoal m_goal; 
 
