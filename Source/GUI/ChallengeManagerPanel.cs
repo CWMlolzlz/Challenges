@@ -23,7 +23,9 @@ namespace ChallengesMod.GUI
 
 		private static readonly float SPACING = 10f;
 
-		ChallengePanel m_challengePanel;
+		static ChallengePanel m_challengePanel; //needs to be static so OnSaveData() can 'see' it
+		static Challenge m_temp_challenge = null;
+		static FastList<IReward> m_activeRewards = new FastList<IReward> ();
 
 		UIPanel m_challengeDetailsPanel;
 		UILabel m_challengeName;
@@ -43,53 +45,79 @@ namespace ChallengesMod.GUI
 		UIDragHandle m_dragHandle;
 
 		List<Challenge> m_challenges;
-		FastList<IReward> m_activeRewards = new FastList<IReward> ();
 		int m_selectedIndex = -1;
 
-		ISerializableData m_dataSerializer;
+		private static readonly string CHALLENGE_KEY = "challenge";
+		private static readonly string ACTIVE_REWARDS_KEY = "activeRewards";
+		static ISerializableData m_dataSerializer;
+
 		public void OnCreated(ISerializableData data){
 			Debug.PrintMessage ("OnCreated");
 			m_dataSerializer = data;
 		}
 
-		private static readonly string CHALLENGE_KEY = "challenge";
-		private static readonly string ACTIVE_REWARDS_KEY = "activeRewards";
-
 		public void OnLoadData(){
-			Debug.PrintMessage ("OnLoadData");
+			Debug.PrintMessage ("OnLoadChallenge");
 			try{
 				byte[] bytes = m_dataSerializer.LoadData(CHALLENGE_KEY);
 				string xmlString = System.Text.Encoding.UTF8.GetString(bytes);
 				Challenge challenge = Data.XMLStringToChallenge(xmlString);
 				Debug.PrintMessage(xmlString);
 				Debug.PrintMessage ("Bytes Read = " + bytes.Length);
+				m_temp_challenge = challenge;
+			}catch(Exception e){
+				Debug.PrintMessage(e.ToString());
+			}
+
+			Debug.PrintMessage ("OnLoadActiveBoosts");
+			try{
+				byte[] bytes = m_dataSerializer.LoadData(ACTIVE_REWARDS_KEY);
+				string xmlString = System.Text.Encoding.UTF8.GetString(bytes);
+				IReward[] rewards = Data.XMLStringToActiveRewards(xmlString);
+				Debug.PrintMessage("Number of active rewards found = " + rewards.Length);
+				AddToActiveRewards(rewards);
+				Debug.PrintMessage(xmlString);
+				Debug.PrintMessage ("Bytes Read = " + bytes.Length);
 			}catch(Exception e){
 				Debug.PrintMessage(e.ToString());
 			}
 		}
+
 		public void OnSaveData(){
 			Debug.PrintMessage ("OnSaveData");
 			if (m_challengePanel != null && m_challengePanel.CurrentChallenge != null) {
 				try {
-					byte[] bytes = System.Text.Encoding.UTF8.GetBytes(Data.ChallengeToXMLString(CurrentChallengePanel.CurrentChallenge));
+					byte[] bytes = System.Text.Encoding.UTF8.GetBytes (Data.ChallengeToXMLString (m_challengePanel.CurrentChallenge));
+					Debug.PrintMessage ("Bytes Ready = " + bytes.Length);
 					m_dataSerializer.SaveData (CHALLENGE_KEY, bytes);
-					Debug.PrintMessage ("Bytes Written = " + bytes.Length);
+				} catch (Exception e) {
+					Debug.PrintMessage (e.ToString ());
+					Debug.PrintMessage ("Source " + e.Source);
+				}
+			} else {
+				Debug.PrintMessage ("No challenge can be saved");
+				m_dataSerializer.SaveData (CHALLENGE_KEY, new byte[]{1});
+			}
+			Debug.PrintMessage (m_activeRewards.m_size);
+			if (m_activeRewards != null && m_activeRewards.m_size > 0) {
+				Debug.PrintMessage ("Saving active rewards");
+				Debug.PrintMessage (m_activeRewards.m_size);
+				try {
+					string xml = Data.ActiveRewardsToXMLString (m_activeRewards.ToArray ());
+					Debug.PrintMessage (xml);
+					byte[] activeRewardBytes = System.Text.Encoding.UTF8.GetBytes (xml);
+					m_dataSerializer.SaveData (ACTIVE_REWARDS_KEY, activeRewardBytes);
 				} catch (Exception e) {
 					Debug.PrintMessage (e.ToString ());
 				}
+			} else {
+				Debug.PrintMessage ("No rewards can be saved");
+				m_dataSerializer.SaveData (ACTIVE_REWARDS_KEY, new byte[]{1});
 			}
-
-			if (m_activeRewards != null) {
-				try{
-					byte[] activeRewardBytes = System.Text.Encoding.UTF8.GetBytes(Data.ActiveRewardsToXMLString(m_activeRewards.ToArray()));
-					m_dataSerializer.SaveData (ACTIVE_REWARDS_KEY, activeRewardBytes);
-				}catch(Exception e){
-					Debug.PrintMessage (e);
-				}
-			}
+			Debug.PrintMessage ("out of saving");
 		}
 
-		public void OnReleased(){}
+		public void OnReleased(){Debug.PrintMessage ("Released");}
 
 		public ChallengePanel CurrentChallengePanel{
 			get{ return m_challengePanel; }
@@ -122,9 +150,11 @@ namespace ChallengesMod.GUI
 			this.cachedName = cacheName;
 
 			m_challengePanel = (ChallengePanel) this.GetUIView ().AddUIComponent (typeof(ChallengePanel));
+			Debug.PrintMessage("Start() - Does ChallengePanel Exists? " + (m_challengePanel != null).ToString());
 			m_challengePanel.manager = this;
 			m_challengePanel.OnChallengeStarted += () => {m_selectButton.Disable ();};
 			m_challengePanel.OnChallengeEnded += () => {m_selectButton.Enable ();};
+
 			m_challengePanel.Hide ();
 
 			m_title = this.AddUIComponent<UILabel> ();
@@ -251,6 +281,11 @@ namespace ChallengesMod.GUI
 			m_challengeDeadline.Disable ();
 
 			FormatDetails ();
+
+			if (m_temp_challenge != null) {
+				m_challengePanel.SetCurrentChallenge (m_temp_challenge,true);
+				//m_temp_challenge = null;
+			}
 		}
 
 		public void AddToActiveRewards(IReward[] rewards){
@@ -258,7 +293,7 @@ namespace ChallengesMod.GUI
 				m_activeRewards.Add (r);
 			}
 		}
-
+		 
 		public void LoadChallenges(){
 			
 			m_challenges = Data.SearchForMods();
@@ -387,7 +422,9 @@ namespace ChallengesMod.GUI
 		}
 
 		private void ChallengeSelected(UIComponent component, UIMouseEventParameter eventArgs){
+			
 			Debug.PrintMessage ("Challenge Selected: " + m_selectedIndex);
+			Debug.PrintMessage("ChallengeSelected() - Does ChallengePanel Exists? " + (m_challengePanel != null).ToString());
 			if (m_selectedIndex != -1) {
 				m_challengePanel.SetCurrentChallenge(m_challenges [this.m_selectedIndex],false);
 			}
