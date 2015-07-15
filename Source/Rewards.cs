@@ -75,6 +75,7 @@ namespace ChallengesMod
 
 		public DateTime EndDate{
 			get{ return m_endDate;}
+			set{ m_endDate = value; isForever = false;}
 		}
 
 		public float Value{
@@ -102,8 +103,10 @@ namespace ChallengesMod
 
 		private void CalculateEndDate(){
 			m_endDate = Data.GetGameDateTime().AddYears (m_years).AddMonths (m_months);
-			Debug.PrintMessage ("Years, Months: " + m_years + ", " + m_months);
-			Debug.PrintMessage (m_endDate.ToString());
+		}
+
+		public void Activate(){
+			m_active = true;
 		}
 
 		public bool Use(){
@@ -118,7 +121,7 @@ namespace ChallengesMod
 			} else {
 				CalculateEndDate ();
 				//Debug.PrintMessage ("Using boost type: " + m_valueID.ToString ());
-				m_active = true;
+				Activate();
 			}
 			return false;
 		}
