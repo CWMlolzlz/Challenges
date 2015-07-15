@@ -204,7 +204,7 @@ namespace ChallengesMod{
 				}
 			}
 			Challenge newChallenge = new Challenge (challengeAtts ["name"].Value, challengeAtts ["desc"].Value, goalsToAdd.ToArray (), rewardsToAdd.ToArray(), penaltiesToAdd.ToArray());
-			Debug.PrintMessage(challengeNode.OuterXml);
+			//Debug.PrintMessage(challengeNode.OuterXml);
 			if (challengeAtts ["requires"] != null) {
 				newChallenge.PassTolerance = int.Parse (challengeAtts ["requires"].Value);
 			}
@@ -237,11 +237,31 @@ namespace ChallengesMod{
 					XmlElement boostElem = doc.CreateElement("boost");
 					boostElem.SetAttribute ("name",b.ValueID.ToString());
 					boostElem.SetAttribute ("value",b.Value.ToString());
-					boostElem.SetAttribute ("endDate",b.EndDate.ToString());
+					if (b.EndDate != null) {
+						boostElem.SetAttribute ("endDate", b.EndDate.ToString ());
+					}
 					doc.AppendChild (boostElem);
 				}
 			}
 			return doc.OuterXml;
+		}
+
+		public static IReward[] XMLStringToActiveRewards(string xml){
+			FastList<IReward> rewards = new FastList<IReward> ();
+			XmlDocument doc = new XmlDocument ();
+			doc.LoadXml (xml);
+			foreach (XmlNode rewardNode in doc.SelectNodes("boost")) {
+				XmlAttributeCollection atts = rewardNode.Attributes;
+				Boost b = new Boost();
+				b.ValueID = Data.StringToValueID(atts ["name"].Value);
+				b.Value = float.Parse(atts ["value"].Value);
+				if (atts ["endDate"] != null) {
+					b.EndDate = DateTime.Parse (atts ["endDate"].Value);
+				}
+				b.Activate ();
+				rewards.Add (b);
+			}
+			return rewards.ToArray ();
 		}
 
 		public static string ChallengeToXMLString(Challenge challenge){
@@ -298,9 +318,6 @@ namespace ChallengesMod{
 				}
 				challengeElem.AppendChild (penaltiesElem);
 			}
-
-
-
 			return challengeElem.OuterXml;
 		}
 
