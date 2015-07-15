@@ -33,11 +33,14 @@ namespace ChallengesMod
 		public override void Start()
 		{
 			base.Start ();
+			Debug.PrintMessage ("Creating ChallengePanel");
 			this.width = WIDTH;
 			this.height = HEAD;
+			if (m_challenge != null && m_challenge.Goals != null) { //covers case when the panel reassignes hieght to be head even with a challenge being loaded
+				this.height = HEAD + GoalProgressPanel.SPACING + m_challenge.Goals.Length * (GoalProgressPanel.HEIGHT+GoalProgressPanel.SPACING);
+			}
 			this.backgroundSprite = "MenuPanel";
 			this.Hide ();
-
 			this.relativePosition = new Vector3 (10,GetUIView().fixedHeight - height - 135);
 
 			m_titleLabel = this.AddUIComponent<UILabel> ();
@@ -102,11 +105,7 @@ namespace ChallengesMod
 
 		public Challenge CurrentChallenge{
 			get{ 
-				//if (m_challenge.m_started && !m_challenge.m_finished){
-					return m_challenge;
-				//} else {
-				//	return (Challenge)null;
-				//s}
+				return m_challenge;
 			}
 		}
 
@@ -120,20 +119,22 @@ namespace ChallengesMod
 			//populate goal panels
 			IGoal[] goals = m_challenge.Goals;
 			this.height = HEAD + GoalProgressPanel.SPACING + goals.Length * (GoalProgressPanel.HEIGHT+GoalProgressPanel.SPACING);
-
+			Debug.PrintMessage ("Number of goals = " + goals.Length);
+			Debug.PrintMessage ("Height of panel = " + this.height);
 			for (int pos = 0; pos < goals.Length; pos++) {
 				goalPanels.Add (GoalProgressPanel.CreateProgressPanel (this, pos, goals[pos]));
 			}
 
 			if (resuming) {
+				
 				if (m_challenge.m_finished) {
 					Debug.PrintMessage ("Challenges have finished already");
 				} else if (m_challenge.m_started) { //has started before hand
-					Debug.PrintMessage ("Continuing Challenges");
-					m_challenge.Resume();
+					Debug.PrintMessage ("Challenge had been started");
 				} else {
-					Debug.PrintMessage ("Challenge has neither started nor finished and was found in save");
+					Debug.PrintMessage ("Challenge has neither started nor finished but was found in save");
 				}
+				m_challenge.Resume();
 			} else {
 				Debug.PrintMessage("Starting Challenges First Time");
 				m_challenge.MapStartTime = Data.GetGameDateTime ();
@@ -156,7 +157,7 @@ namespace ChallengesMod
 					break;
 				}
 			};
-
+			Debug.PrintMessage ("Showing ChallengePanel");
 			this.Show ();
 
 		}
@@ -189,7 +190,7 @@ namespace ChallengesMod
 				GameObject.DestroyImmediate(goalPanel);
 			}
 			Debug.PrintMessage ("Finsihed destroying");
-			m_challenge.Reset ();
+			//m_challenge.Reset ();
 			m_challenge = null;
 			OnChallengeEnded ();
 			this.Hide();
