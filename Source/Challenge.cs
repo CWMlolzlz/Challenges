@@ -132,7 +132,7 @@ namespace ChallengesMod
 		}
 
 		public void Resume(){
-			m_active = true;
+			Start ();
 		}
 
 		public void UpdateGoals(){
