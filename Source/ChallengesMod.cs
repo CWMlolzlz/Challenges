@@ -30,8 +30,7 @@ namespace ChallengesMod{
 		ChallengeManagerPanel m_managerPanel;
 
 		public string Name {
-			get{
-				//Test.TestChallengeToString(); 
+			get{Debug.PrintMessage ("Found");
 				return "Challenges"; 		
 			}
 		} 
@@ -53,7 +52,7 @@ namespace ChallengesMod{
 			//test (-1);
 			Debug.PrintMessage ("Loaded Game");
 			//LoadChallenge ();
-			//Challenge challenge = LoadChallenge ();
+			//Challenge challenge = LoadChallenge (); 
 
 			m_view = UIView.GetAView();
 			m_managerPanel = (ChallengeManagerPanel)m_view.AddUIComponent(typeof(ChallengeManagerPanel));
